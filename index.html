@@ -170,6 +170,16 @@
       <button id="go" class="primary big" disabled>Processar e gerar Excel</button>
       <span id="goHint" class="muted">Copia as fotos renomeadas (os originais não são alterados).</span>
     </div>
+    <div class="row" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">
+      <label>Relatório por aluno
+        <select id="relTipo">
+          <option value="completo">Completo: 1 folha por aluno</option>
+          <option value="resumo">Resumo para anexar: 4 por folha</option>
+        </select>
+      </label>
+      <button id="relPrint" class="big">🖨 Imprimir relatórios</button>
+    </div>
+    <p class="muted" style="margin:6px 0 0">O relatório também vai dentro do ZIP ou da pasta de destino, para imprimir mais tarde.</p>
     <div id="log"></div>
   </section>
 </main>
@@ -544,6 +554,100 @@ async function lerIA(a){
 }
 $('#iaAll').onclick=async()=>{ for(const a of S.alunos) await lerIA(a); };
 
+/* ---------- relatórios ---------- */
+function linhasAluno(a){
+  const out=[];
+  for(let q=1;q<=S.n;q++){
+    const k=S.key[q]; if(!k) continue;
+    if(isAb(q)){
+      const o=a.ab[q]||{}; const v=o.nota;
+      out.push({q, ab:true, o, pts:v??0, res: v==null?'Sem nota':(v>=peso(q)?'Certa':(v>0?'Parcial':'Errada'))});
+    } else {
+      const r=a.resp[q];
+      out.push({q, ab:false, r, k, pts: r===k?peso(q):0, res: !r||r==='-' ? 'Em branco' : (r===k?'Certa':'Errada')});
+    }
+  }
+  return out;
+}
+const REL_CSS = `
+  *{box-sizing:border-box} body{font:11pt/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#111;margin:0}
+  @page{size:A4;margin:14mm}
+  .pg{page-break-after:always} .pg:last-child{page-break-after:auto}
+  h1{font-size:15pt;margin:0} .sub{color:#555;font-size:10pt}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #111;padding-bottom:6px;margin-bottom:10px}
+  .nota{text-align:right} .nota b{font-size:22pt;display:block;line-height:1}
+  table{width:100%;border-collapse:collapse;font-size:10pt} th,td{border:1px solid #bbb;padding:3px 6px;text-align:left}
+  th{background:#f1f1f1} td.c{text-align:center} .Certa{color:#15803d;font-weight:600} .Errada{color:#b91c1c;font-weight:600} .Parcial{color:#b45309;font-weight:600}
+  .ab{border:1px solid #bbb;border-radius:4px;padding:6px 8px;margin-top:8px;page-break-inside:avoid}
+  .tr{font-family:Georgia,serif;white-space:pre-wrap;background:#fafafa;padding:4px 6px;margin:4px 0}
+  mark{background:#fde68a}
+  .obs{margin-top:14px} .ln{border-bottom:1px solid #999;height:22px}
+  .ass{display:flex;gap:30px;margin-top:22px} .ass div{flex:1;border-top:1px solid #111;padding-top:3px;font-size:9pt;text-align:center}
+  .prov{color:#b45309;font-size:9pt}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:0}
+  .fx{border:1px dashed #888;padding:9mm 8mm;height:128mm;page-break-inside:avoid;overflow:hidden}
+  .fx h2{font-size:13pt;margin:0 0 2px} .fx .big{font-size:30pt;font-weight:700;line-height:1.1;margin:8px 0 2px}
+  .fx ul{padding-left:16px;margin:6px 0;font-size:10pt} .fx .muted{color:#555;font-size:9.5pt}
+  .tool{padding:10px;background:#eef2ff;font:13px system-ui;display:flex;gap:10px;align-items:center}
+  @media print{.tool{display:none}}`;
+function relatorioHTML(tipo){
+  const hoje=new Date().toLocaleDateString('pt-BR');
+  const prova=esc(S.prova||'');
+  let body='';
+  if(tipo==='resumo'){
+    const fichas=S.alunos.map(a=>{
+      const sc=score(a), ls=linhasAluno(a);
+      const erradas=ls.filter(l=>l.res!=='Certa');
+      const itens=erradas.slice(0,14).map(l=> l.ab
+        ? `<li>Q${pad(l.q)} (aberta): ${l.res==='Sem nota' ? 'sem nota' : fmt(l.pts)+' de '+fmt(peso(l.q))+' pts'}</li>`
+        : `<li>Q${pad(l.q)}: ${l.r&&l.r!=='-' ? 'marcou '+esc(l.r) : 'em branco'}, resposta certa <b>${esc(l.k)}</b></li>`).join('');
+      const mais = erradas.length>14 ? `<li>… e mais ${erradas.length-14}</li>` : '';
+      return `<div class="fx"><h2>${esc(a.nome||'(sem nome)')}</h2>
+        <div class="muted">Prova ${prova} · ${hoje}</div>
+        <div class="big">${fmt(sc.nota)} <span style="font-size:14pt;font-weight:400">de ${fmt(sc.max)}</span></div>
+        <div class="muted">${sc.corr} certas${sc.parc?`, ${sc.parc} parciais`:''}, ${sc.err} erradas, ${sc.br} em branco${sc.pend?' · <span class="prov">nota provisória</span>':''}</div>
+        ${erradas.length ? `<div style="margin-top:8px;font-weight:600">Para rever</div><ul>${itens}${mais}</ul>` : '<p><b>Acertou todas as questões.</b></p>'}</div>`;
+    });
+    for(let i=0;i<fichas.length;i+=4) body+=`<div class="pg grid">${fichas.slice(i,i+4).join('')}</div>`;
+  } else {
+    body=S.alunos.map(a=>{
+      const sc=score(a), ls=linhasAluno(a);
+      const rows=ls.map(l=>`<tr><td class="c">${pad(l.q)}</td><td>${l.ab?'Aberta':'Objetiva'}</td>
+        <td class="c">${l.ab?'ver abaixo':(l.r&&l.r!=='-'?esc(l.r):'—')}</td><td class="c">${l.ab?'—':esc(l.k)}</td>
+        <td class="${l.res}">${l.res}</td><td class="c">${fmt(l.pts)} / ${fmt(peso(l.q))}</td></tr>`).join('');
+      const abs=ls.filter(l=>l.ab).map(l=>`<div class="ab"><b>Questão ${pad(l.q)}</b> · ${fmt(l.pts)} de ${fmt(peso(l.q))} pts
+        ${l.o.revisado?'':'<span class="prov">(nota provisória)</span>'}
+        <div class="tr">${l.o.transcricao!=null?marcar(l.o.transcricao):'(não lida)'}</div>
+        ${l.o.justificativa?`<div><i>Comentário:</i> ${esc(l.o.justificativa)}</div>`:''}</div>`).join('');
+      return `<div class="pg">
+        <div class="top"><div><h1>${esc(a.nome||'(sem nome)')}</h1><div class="sub">Prova ${prova} · ${hoje}</div></div>
+          <div class="nota"><b>${fmt(sc.nota)}</b>de ${fmt(sc.max)} pontos</div></div>
+        <p class="sub">${sc.corr} certas${sc.parc?`, ${sc.parc} parciais`:''}, ${sc.err} erradas, ${sc.br} em branco${sc.pend?` · <span class="prov">${sc.pend} questão(ões) aberta(s) com nota provisória</span>`:''}</p>
+        <table><thead><tr><th>Q</th><th>Tipo</th><th>Marcou</th><th>Gabarito</th><th>Resultado</th><th>Pontos</th></tr></thead><tbody>${rows}</tbody></table>
+        ${abs}
+        <div class="obs"><b>Observações da professora</b><div class="ln"></div><div class="ln"></div><div class="ln"></div></div>
+        <div class="ass"><div>Professora</div><div>Responsável pelo aluno</div></div>
+      </div>`;
+    }).join('');
+  }
+  return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Relatórios ${prova}</title><style>${REL_CSS}</style></head>
+    <body><div class="tool"><button onclick="window.print()">🖨 Imprimir</button><span>Pode também guardar como PDF na janela de impressão.</span></div>${body}</body></html>`;
+}
+$('#relPrint').onclick=()=>{
+  $('#log').innerHTML='';
+  if(!S.alunos.length){ log('Ainda não há alunos para o relatório.','warn'); return; }
+  const pend=S.alunos.reduce((t,a)=>t+score(a).pend,0);
+  if(pend) log(`⚠ Há ${pend} questão(ões) aberta(s) por rever. Aparecem no relatório como "nota provisória".`,'warn');
+  const html=relatorioHTML($('#relTipo').value);
+  const wdw=window.open('','_blank');
+  if(wdw){ wdw.document.open(); wdw.document.write(html); wdw.document.close(); setTimeout(()=>{ try{ wdw.focus(); wdw.print(); }catch(e){} }, 400); }
+  else {
+    const link=document.createElement('a'); link.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));
+    link.download=`Relatorios_${safe(S.prova||'PROVA')}.html`; document.body.appendChild(link); link.click(); link.remove();
+    log('O navegador bloqueou a janela; o relatório foi descarregado. Abra-o e imprima.');
+  }
+};
+
 /* ---------- processar ---------- */
 function qLabel(str){
   const nums=String(str||'').split(/[^0-9]+/).filter(Boolean).map(n=>parseInt(n,10)).filter(n=>n>0);
@@ -612,18 +716,21 @@ $('#go').onclick=async()=>{
     const d=new Date(), stamp=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}`;
     const xname=`Notas_${prova}_${stamp}.xlsx`;
     const xbuf=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+    const rname=`Relatorios_${prova}_${stamp}.html`, rhtml=relatorioHTML($('#relTipo').value);
     if(zip){
-      zip.file(xname, xbuf);
+      zip.file(xname, xbuf); zip.file(rname, rhtml);
       log('A criar o ZIP…');
       const blob=await zip.generateAsync({type:'blob'});
       const zname=`Correcao_${prova}_${stamp}.zip`;
       const link=document.createElement('a'); link.href=URL.createObjectURL(blob); link.download=zname;
       document.body.appendChild(link); link.click(); link.remove();
       setTimeout(()=>URL.revokeObjectURL(link.href), 60000);
-      log(`✓ ZIP descarregado: ${zname} (inclui o Excel ${xname})`);
+      log(`✓ ZIP descarregado: ${zname} (inclui o Excel e os relatórios)`);
     } else {
       await writeFile(S.dst, xname, xbuf);
+      await writeFile(S.dst, rname, rhtml);
       log(`✓ Excel criado: ${xname}`);
+      log(`✓ Relatórios criados: ${rname} (abra e imprima)`);
     }
     log('Concluído.');
   }catch(e){

@@ -8,7 +8,11 @@ Funciona no Chrome ou Edge de computador.
 
 Toque em **Tirar foto** para cada página, prova a prova: primeira página do João, páginas seguintes, primeira página do Guilherme, e assim por diante. Em **Ler e separar por aluno**, a IA reconhece a primeira página de cada aluno, lê o nome e as respostas e separa as fotos. Se errar, use **Novo aluno daqui** numa foto ou **Juntar ao aluno anterior** num aluno.
 
-Sem pasta de destino (sempre no telemóvel), o resultado é descarregado num ZIP com uma pasta por aluno e o Excel.
+Sem pasta de destino (sempre no telemóvel), o resultado é descarregado num ZIP com uma pasta por aluno, o Excel e os relatórios.
+
+## Relatórios para imprimir
+
+Em **Imprimir relatórios**, escolha o modelo: **Completo** (uma folha por aluno, com todas as questões, transcrição das abertas, observações e assinaturas) ou **Resumo para anexar** (4 fichas por folha A4, com a nota e as questões a rever, para recortar e agrafar na prova). Notas de questões abertas ainda não revistas aparecem como "nota provisória".
 
 ## Questões abertas
 
