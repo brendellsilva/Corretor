@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Corretor de Provas</title>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<style>
+  :root{--bg:#f6f5f1;--card:#fff;--ink:#1d2433;--muted:#6b7280;--line:#e3e1da;--acc:#1f5eff;--ok:#16a34a;--bad:#dc2626;--warn:#b45309}
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  header{padding:18px 24px;border-bottom:1px solid var(--line);background:#fff;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+  header h1{font-size:18px;margin:0}
+  header .sub{color:var(--muted)}
+  main{max-width:1200px;margin:0 auto;padding:20px 24px 80px;display:grid;gap:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px}
+  .card h2{font-size:15px;margin:0 0 12px}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  button{font:inherit;border:1px solid var(--line);background:#fff;border-radius:7px;padding:7px 12px;cursor:pointer}
+  button:hover{border-color:#b9b6ab}
+  button.primary{background:var(--acc);border-color:var(--acc);color:#fff}
+  button.primary:disabled{opacity:.45;cursor:not-allowed}
+  input,select{font:inherit;border:1px solid var(--line);border-radius:6px;padding:6px 8px;background:#fff}
+  .path{color:var(--muted);font-family:ui-monospace,Menlo,monospace;font-size:13px}
+  .path.set{color:var(--ink)}
+  .keygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:6px}
+  .kcell{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:6px;padding:4px 6px}
+  .kcell span{font-weight:600;font-variant-numeric:tabular-nums;width:30px}
+  .kcell select{padding:2px 4px}
+  .kcell input{width:52px;padding:2px 4px}
+  .kgrid2{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+  .aluno .ahead{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+  .aluno .nome{font-size:15px;font-weight:600;min-width:260px;flex:1}
+  .pill{background:#eef2ff;color:#1e3a8a;border-radius:99px;padding:4px 10px;font-weight:600;font-variant-numeric:tabular-nums}
+  .ast{color:var(--muted);font-size:13px}
+  .thumbs{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;margin-bottom:12px}
+  .thumb{flex:0 0 120px;display:flex;flex-direction:column;gap:4px}
+  .thumb img{width:120px;height:150px;object-fit:cover;border-radius:6px;border:1px solid var(--line);cursor:zoom-in}
+  .thumb small{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .thumb input{width:100%;font-size:12px;padding:4px 6px}
+  .resp{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px}
+  .q{display:flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:6px;padding:4px 6px}
+  .q.nokey{opacity:.45}
+  .q b{width:34px;font-variant-numeric:tabular-nums}
+  .q button{padding:2px 0;width:28px;border-radius:5px;font-weight:600}
+  .q button.sel{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .q button.sel.ok{background:var(--ok);border-color:var(--ok)}
+  .q button.sel.bad{background:var(--bad);border-color:var(--bad)}
+  .q button.gab{outline:2px dashed var(--ok);outline-offset:-3px}
+  #log{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;white-space:pre-wrap;max-height:260px;overflow:auto;background:#fbfaf7;border:1px solid var(--line);border-radius:6px;padding:10px;margin-top:10px}
+  #log:empty{display:none}
+  .warn{color:var(--warn)}
+  .muted{color:var(--muted)}
+  details summary{cursor:pointer;font-weight:600}
+  #modal{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:9;cursor:zoom-out}
+  #modal img{max-width:95vw;max-height:95vh}
+  .empty{color:var(--muted);text-align:center;padding:30px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Corretor de Provas</h1>
+  <span class="sub">Pasta de origem → correção → pasta de destino com ficheiros renomeados + Excel de notas</span>
+</header>
+
+<main>
+  <section class="card">
+    <details>
+      <summary>Como usar</summary>
+      <ol class="muted">
+        <li>Na pasta de origem, crie <b>uma subpasta por aluno</b> com as fotos da prova dele (o nome da subpasta vira o nome do aluno). Fotos soltas na raiz contam como um único aluno.</li>
+        <li>Confira o gabarito abaixo (fica guardado neste navegador).</li>
+        <li>Para cada aluno: clique nas alternativas marcadas, ou use <b>Ler com IA</b> e revise. Em cada foto, indique as questões que ela contém (ex.: <code>6,7</code>) para o nome do ficheiro.</li>
+        <li>Escolha a pasta de destino e clique em <b>Processar</b>. É criada uma subpasta por aluno com as fotos renomeadas e um Excel com as notas e os detalhes.</li>
+      </ol>
+      <p class="muted">Funciona no Chrome ou Edge de computador (precisa de acesso a pastas locais).</p>
+    </details>
+  </section>
+
+  <section class="card">
+    <h2>1. Prova e gabarito</h2>
+    <div class="row" style="margin-bottom:12px">
+      <label>Código da prova <input id="prova" size="10"></label>
+      <label>Nº de questões <input id="nq" type="number" min="1" max="200" style="width:70px"></label>
+      <button id="resetKey">Repor gabarito M0504</button>
+    </div>
+    <div class="row" style="margin-bottom:12px">
+      <span>Questões de</span><input id="ra" type="number" min="1" style="width:60px">
+      <span>a</span><input id="rb" type="number" min="1" style="width:60px">
+      <span>valem</span><input id="rp" type="number" min="0" step="0.05" style="width:70px"><span>pontos cada</span>
+      <button id="applyRange">Aplicar</button>
+      <button id="dist10">Distribuir 10 pontos igualmente</button>
+    </div>
+    <div id="key" class="keygrid kgrid2"></div>
+    <p style="margin:10px 0 0"><b id="totPts"></b> <span class="muted">Cada questão: gabarito e valor em pontos. Questões sem gabarito (—) não entram na nota.</span></p>
+  </section>
+
+  <section class="card">
+    <h2>2. Pastas</h2>
+    <div class="row" style="margin-bottom:8px">
+      <button id="pickSrc">Escolher pasta de origem</button>
+      <span id="srcPath" class="path">nenhuma</span>
+    </div>
+    <div class="row">
+      <button id="pickDst">Escolher pasta de destino</button>
+      <span id="dstPath" class="path">nenhuma</span>
+    </div>
+  </section>
+
+  <section class="card" id="iaCard">
+    <h2>Código de acesso</h2>
+    <div class="row">
+      <label>Código <input id="codigo" type="password" size="24" placeholder="fornecido pelo administrador"></label>
+      <label><input id="remember" type="checkbox"> lembrar neste navegador</label>
+    </div>
+    <p class="muted" style="margin:8px 0 0">Com o código preenchido, as provas são lidas automaticamente assim que escolhe a pasta de origem. Revise sempre antes de processar.</p>
+  </section>
+
+  <section>
+    <div class="row" style="justify-content:space-between;margin-bottom:10px">
+      <h2 style="font-size:15px;margin:0">3. Alunos <span id="resumo" class="muted"></span></h2>
+      <button id="iaAll">Ler todos com IA</button>
+    </div>
+    <div id="alunos"><div class="card empty">Escolha a pasta de origem para carregar os alunos.</div></div>
+  </section>
+
+  <section class="card">
+    <h2>4. Processar</h2>
+    <div class="row">
+      <button id="go" class="primary" disabled>Processar e gerar Excel</button>
+      <span class="muted">Copia as fotos renomeadas (os originais não são alterados).</span>
+    </div>
+    <div id="log"></div>
+  </section>
+</main>
+
+<div id="modal"><img alt=""></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const IMG_RE = /\.(jpe?g|png|webp|gif|bmp)$/i;
+const LETRAS = ['A','B','C','D'];
+const DEFAULT = { prova:'M0504', n:22, peso:{},
+  key:{1:'B',2:'C',3:'D',4:'A',5:'D',6:'A',7:'C',8:'B',9:'A',10:'B',11:'D',12:'A',20:'B',21:'B',22:'C'} };
+const S = { prova:'', n:0, key:{}, peso:{}, src:null, dst:null, alunos:[] };
+const peso = q => (S.peso[q] ?? 1);
+const r2 = n => Math.round(n*100)/100;
+let nextId = 1;
+
+const pad = n => String(n).padStart(2,'0');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = n => n.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:2});
+const safe = s => String(s).normalize('NFC').replace(/[\\/:*?"<>|]/g,'').trim().replace(/\s+/g,'_');
+const log = (msg, cls) => { const d=document.createElement('div'); if(cls) d.className=cls; d.textContent=msg; $('#log').appendChild(d); $('#log').scrollTop=1e9; };
+
+/* ---------- configuração ---------- */
+function loadCfg(){
+  let c=null; try{ c=JSON.parse(localStorage.getItem('corretor_cfg')||'null'); }catch(e){}
+  const src = c || DEFAULT;
+  S.prova=src.prova; S.n=src.n; S.key={...src.key}; S.peso={...(src.peso||{})};
+  try{ const k=localStorage.getItem('corretor_codigo'); if(k){ $('#codigo').value=k; $('#remember').checked=true; } }catch(e){}
+}
+function saveCfg(){ try{ localStorage.setItem('corretor_cfg', JSON.stringify({prova:S.prova,n:S.n,key:S.key,peso:S.peso})); }catch(e){} }
+
+function renderKey(){
+  $('#prova').value=S.prova; $('#nq').value=S.n;
+  const box=$('#key'); box.innerHTML='';
+  for(let q=1;q<=S.n;q++){
+    const lab=document.createElement('label'); lab.className='kcell';
+    lab.innerHTML=`<span>Q${pad(q)}</span>`;
+    const sel=document.createElement('select');
+    ['',...LETRAS].forEach(o=>{ const op=document.createElement('option'); op.value=o; op.textContent=o||'—'; if((S.key[q]||'')===o) op.selected=true; sel.appendChild(op); });
+    sel.onchange=()=>{ if(sel.value) S.key[q]=sel.value; else delete S.key[q]; saveCfg(); renderAlunos(); };
+    const pi=document.createElement('input'); pi.type='number'; pi.min='0'; pi.step='0.05'; pi.title='Valor em pontos'; pi.value=peso(q);
+    pi.onchange=()=>{ const v=parseFloat(String(pi.value).replace(',','.')); S.peso[q]= isNaN(v)||v<0 ? 1 : v; saveCfg(); totPts(); renderAlunos(); };
+    lab.appendChild(sel); lab.appendChild(pi); lab.appendChild(Object.assign(document.createElement('small'),{className:'muted',textContent:'pts'}));
+    box.appendChild(lab);
+  }
+  totPts();
+}
+function totPts(){
+  let t=0, n=0; for(let q=1;q<=S.n;q++) if(S.key[q]){ t+=peso(q); n++; }
+  $('#totPts').textContent=`Total da prova: ${fmt(r2(t))} pontos em ${n} questões.`;
+}
+$('#applyRange').onclick=()=>{
+  const a=parseInt($('#ra').value,10), b=parseInt($('#rb').value,10), p=parseFloat(String($('#rp').value).replace(',','.'));
+  if(!(a>=1 && b>=a && p>=0)) return;
+  for(let q=a;q<=Math.min(b,S.n);q++) S.peso[q]=p;
+  saveCfg(); renderKey(); renderAlunos();
+};
+$('#dist10').onclick=()=>{
+  const qs=[]; for(let q=1;q<=S.n;q++) if(S.key[q]) qs.push(q);
+  if(!qs.length) return;
+  const v=Math.round(10/qs.length*100)/100;
+  qs.forEach(q=>S.peso[q]=v); saveCfg(); renderKey(); renderAlunos();
+};
+$('#prova').oninput=e=>{ S.prova=e.target.value.trim(); saveCfg(); };
+$('#nq').onchange=e=>{ const v=parseInt(e.target.value,10); if(v>0){ S.n=v; Object.keys(S.key).forEach(k=>{ if(+k>v) delete S.key[k]; }); saveCfg(); renderKey(); renderAlunos(); } };
+$('#resetKey').onclick=()=>{ S.prova=DEFAULT.prova; S.n=DEFAULT.n; S.key={...DEFAULT.key}; S.peso={...DEFAULT.peso}; saveCfg(); renderKey(); renderAlunos(); };
+$('#remember').onchange=()=>{ try{ if($('#remember').checked) localStorage.setItem('corretor_codigo',$('#codigo').value); else localStorage.removeItem('corretor_codigo'); }catch(e){} };
+$('#codigo').oninput=()=>{ if($('#remember').checked){ try{ localStorage.setItem('corretor_codigo',$('#codigo').value); }catch(e){} } };
+
+/* ---------- pastas ---------- */
+function needFS(){
+  if(!window.showDirectoryPicker){ alertBox('Este navegador não permite escolher pastas. Abra o ficheiro no Chrome ou Edge de computador.'); return false; }
+  return true;
+}
+function alertBox(msg){ $('#log').innerHTML=''; log(msg,'warn'); $('#log').scrollIntoView({behavior:'smooth'}); }
+
+async function mkImg(h){ const file=await h.getFile(); return { name:h.name, file, url:URL.createObjectURL(file), q:'' }; }
+function newAluno(nome, imgs){ imgs.sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true})); return { id:nextId++, nome, imgs, resp:{} }; }
+
+$('#pickSrc').onclick=async()=>{
+  if(!needFS()) return;
+  let h; try{ h=await window.showDirectoryPicker({mode:'read'}); }catch(e){ return; }
+  S.src=h; S.alunos.forEach(a=>a.imgs.forEach(i=>URL.revokeObjectURL(i.url))); S.alunos=[];
+  $('#srcPath').textContent=h.name+' (a ler…)'; $('#srcPath').classList.add('set');
+  const raiz=[];
+  for await (const [name, e] of h.entries()){
+    if(e.kind==='file' && IMG_RE.test(name)) raiz.push(await mkImg(e));
+    else if(e.kind==='directory'){
+      const imgs=[];
+      for await (const [n2, e2] of e.entries()) if(e2.kind==='file' && IMG_RE.test(n2)) imgs.push(await mkImg(e2));
+      if(imgs.length) S.alunos.push(newAluno(name, imgs));
+    }
+  }
+  S.alunos.sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
+  if(raiz.length) S.alunos.push(newAluno('', raiz));
+  const nImg=S.alunos.reduce((s,a)=>s+a.imgs.length,0);
+  $('#srcPath').textContent=`${h.name} · ${S.alunos.length} aluno(s), ${nImg} foto(s)`;
+  renderAlunos(); updateGo();
+  if($('#codigo').value.trim() && S.alunos.length){ for(const a of S.alunos) await lerIA(a); }
+};
+$('#pickDst').onclick=async()=>{
+  if(!needFS()) return;
+  try{ S.dst=await window.showDirectoryPicker({mode:'readwrite'}); }catch(e){ return; }
+  $('#dstPath').textContent=S.dst.name; $('#dstPath').classList.add('set'); updateGo();
+};
+function updateGo(){ $('#go').disabled = !(S.src && S.dst && S.alunos.length); }
+
+/* ---------- correção ---------- */
+function score(a){
+  let corr=0, err=0, br=0, tot=0, nota=0, max=0;
+  for(let q=1;q<=S.n;q++){
+    if(!S.key[q]) continue; tot++; max+=peso(q);
+    const r=a.resp[q];
+    if(!r || r==='-') br++; else if(r===S.key[q]){ corr++; nota+=peso(q); } else err++;
+  }
+  return {corr, err, br, tot, nota:r2(nota), max:r2(max)};
+}
+
+function cardAluno(a){
+  const sc=score(a);
+  const el=document.createElement('section'); el.className='card aluno'; el.id='al'+a.id;
+  el.innerHTML=`<div class="ahead">
+      <input class="nome" placeholder="Nome do aluno (obrigatório)" value="${esc(a.nome)}">
+      <span class="pill">${sc.corr}/${sc.tot} acertos · ${fmt(sc.nota)} de ${fmt(sc.max)} pts</span>
+      <button class="ia">Ler com IA</button><span class="ast"></span>
+    </div><div class="thumbs"></div><div class="resp"></div>`;
+  el.querySelector('.nome').oninput=e=>{ a.nome=e.target.value; };
+  el.querySelector('.ia').onclick=()=>lerIA(a);
+  const th=el.querySelector('.thumbs');
+  a.imgs.forEach(img=>{
+    const d=document.createElement('div'); d.className='thumb';
+    d.innerHTML=`<img src="${img.url}" alt=""><small title="${esc(img.name)}">${esc(img.name)}</small><input placeholder="Questões ex: 6,7" value="${esc(img.q)}">`;
+    d.querySelector('img').onclick=()=>{ $('#modal img').src=img.url; $('#modal').style.display='flex'; };
+    d.querySelector('input').oninput=e=>{ img.q=e.target.value; };
+    th.appendChild(d);
+  });
+  const rp=el.querySelector('.resp');
+  for(let q=1;q<=S.n;q++){
+    const k=S.key[q], r=a.resp[q];
+    const row=document.createElement('div'); row.className='q'+(k?'':' nokey');
+    row.innerHTML=`<b>Q${pad(q)}</b>`; row.title=`Vale ${fmt(peso(q))} pts`;
+    [...LETRAS,'-'].forEach(L=>{
+      const b=document.createElement('button'); b.textContent= L==='-' ? '∅' : L;
+      b.title = L==='-' ? 'Em branco / rasurada / dupla marcação' : 'Alternativa '+L;
+      if(r===L){ b.classList.add('sel'); if(k) b.classList.add(L===k?'ok':'bad'); }
+      if(r && k && L===k && r!==k) b.classList.add('gab');
+      b.onclick=()=>{ if(a.resp[q]===L) delete a.resp[q]; else a.resp[q]=L; refresh(a); };
+      row.appendChild(b);
+    });
+    rp.appendChild(row);
+  }
+  return el;
+}
+function refresh(a){ const old=document.getElementById('al'+a.id); if(old) old.replaceWith(cardAluno(a)); resumo(); }
+function renderAlunos(){
+  const box=$('#alunos'); box.innerHTML='';
+  if(!S.alunos.length){ box.innerHTML='<div class="card empty">Escolha a pasta de origem para carregar os alunos.</div>'; resumo(); return; }
+  S.alunos.forEach(a=>box.appendChild(cardAluno(a))); resumo();
+}
+function resumo(){
+  if(!S.alunos.length){ $('#resumo').textContent=''; return; }
+  const notas=S.alunos.map(a=>score(a).nota);
+  const media=notas.reduce((s,n)=>s+n,0)/notas.length;
+  $('#resumo').textContent=`· ${S.alunos.length} aluno(s) · média ${fmt(media)}`;
+}
+$('#modal').onclick=()=>{ $('#modal').style.display='none'; };
+
+/* ---------- leitura com IA ---------- */
+async function toB64(file){
+  const bmp=await createImageBitmap(file);
+  const max=1568, s=Math.min(1, max/Math.max(bmp.width,bmp.height));
+  const c=document.createElement('canvas'); c.width=Math.round(bmp.width*s); c.height=Math.round(bmp.height*s);
+  c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
+  return c.toDataURL('image/jpeg',0.85).split(',')[1];
+}
+async function lerIA(a){
+  const st=()=>document.querySelector('#al'+a.id+' .ast');
+  const codigo=$('#codigo').value.trim();
+  if(!codigo){ st().textContent='Indique o código de acesso acima.'; st().className='ast warn'; return; }
+  st().className='ast';
+  let falhas=0;
+  for(let i=0;i<a.imgs.length;i++){
+    st().textContent=`A ler foto ${i+1} de ${a.imgs.length}…`;
+    try{
+      const res=await fetch('/api/ler',{method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({codigo, imagem:await toB64(a.imgs[i].file)})});
+      const j=await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(j.erro || ('HTTP '+res.status));
+      if(j.nome && !a.nome.trim()) a.nome=j.nome;
+      if(Array.isArray(j.questoes)) a.imgs[i].q=j.questoes.join(',');
+      Object.entries(j.respostas||{}).forEach(([q,r])=>{
+        q=parseInt(q,10); r=String(r||'-').trim().toUpperCase();
+        if(q>=1 && q<=S.n) a.resp[q] = LETRAS.includes(r) ? r : '-';
+      });
+    }catch(e){
+      falhas++;
+      if(/código/i.test(e.message)){ refresh(a); st().className='ast warn'; st().textContent=e.message; return; }
+    }
+  }
+  refresh(a);
+  st().className = falhas ? 'ast warn' : 'ast';
+  st().textContent = falhas ? `${falhas} foto(s) não foram lidas, preencha à mão.` : 'Lido pela IA, revise as marcações.';
+}
+$('#iaAll').onclick=async()=>{ for(const a of S.alunos) await lerIA(a); };
+
+/* ---------- processar ---------- */
+function qLabel(str){
+  const nums=String(str||'').split(/[^0-9]+/).filter(Boolean).map(n=>parseInt(n,10)).filter(n=>n>0);
+  if(!nums.length) return '';
+  return [...new Set(nums)].sort((x,y)=>x-y).map(n=>'Q'+pad(n)).join('-');
+}
+async function writeFile(dir, name, data){
+  const fh=await dir.getFileHandle(name,{create:true});
+  const w=await fh.createWritable(); await w.write(data); await w.close();
+}
+
+$('#go').onclick=async()=>{
+  $('#log').innerHTML='';
+  const semNome=S.alunos.filter(a=>!a.nome.trim());
+  if(semNome.length){ log(`Faltam nomes em ${semNome.length} aluno(s). Preencha antes de processar.`,'warn'); return; }
+  const nomes=S.alunos.map(a=>safe(a.nome).toLowerCase());
+  if(new Set(nomes).size!==nomes.length){ log('Há alunos com o mesmo nome. Diferencie-os (ex.: sobrenome) antes de processar.','warn'); return; }
+  if(!Object.keys(S.key).length){ log('O gabarito está vazio.','warn'); return; }
+  $('#go').disabled=true;
+  const prova=safe(S.prova||'PROVA');
+  const resumoRows=[], detRows=[];
+  try{
+    for(const a of S.alunos){
+      const nome=a.nome.trim(), pasta=safe(nome);
+      const dir=await S.dst.getDirectoryHandle(pasta,{create:true});
+      const usados=new Set(); const ficheiros=[];
+      for(let i=0;i<a.imgs.length;i++){
+        const img=a.imgs[i];
+        const ext=(img.name.match(/\.[^.]+$/)||['.jpg'])[0].toLowerCase();
+        let base=`${pasta}_${prova}_${qLabel(img.q) || 'pag'+pad(i+1)}`, nm=base+ext, k=2;
+        while(usados.has(nm.toLowerCase())) nm=`${base}_${k++}${ext}`;
+        usados.add(nm.toLowerCase());
+        await writeFile(dir, nm, img.file);
+        ficheiros.push(nm);
+      }
+      const sc=score(a);
+      resumoRows.push({'Aluno':nome,'Prova':S.prova,'Questões corrigidas':sc.tot,'Acertos':sc.corr,'Erros':sc.err,'Em branco / sem resposta':sc.br,
+        '% Acerto': sc.tot? Math.round(sc.corr/sc.tot*1000)/10 : 0, 'Nota (pontos)':sc.nota, 'Pontos possíveis':sc.max,'Fotos':ficheiros.length,'Pasta':pasta});
+      for(let q=1;q<=S.n;q++){
+        const k=S.key[q], r=a.resp[q];
+        if(!k && !r) continue;
+        let res = !k ? 'Sem gabarito' : (!r ? 'Sem resposta' : (r==='-' ? 'Em branco/anulada' : (r===k ? 'Certa' : 'Errada')));
+        detRows.push({'Aluno':nome,'Questão':q,'Marcada':r==='-'?'∅':(r||''),'Gabarito':k||'','Resultado':res,'Valor (pts)':k?peso(q):'','Pontos obtidos':res==='Certa'?peso(q):0});
+      }
+      log(`✓ ${nome}: ${sc.corr}/${sc.tot} acertos, ${fmt(sc.nota)} de ${fmt(sc.max)} pts · ${ficheiros.length} foto(s) em /${pasta}`);
+    }
+    const wb=XLSX.utils.book_new();
+    const ws1=XLSX.utils.json_to_sheet(resumoRows);
+    ws1['!cols']=[{wch:32},{wch:10},{wch:18},{wch:9},{wch:8},{wch:22},{wch:10},{wch:13},{wch:15},{wch:7},{wch:30}];
+    XLSX.utils.book_append_sheet(wb, ws1, 'Notas');
+    const ws2=XLSX.utils.json_to_sheet(detRows);
+    ws2['!cols']=[{wch:32},{wch:9},{wch:9},{wch:9},{wch:18},{wch:11},{wch:14}];
+    ws2['!autofilter']={ref:ws2['!ref']};
+    XLSX.utils.book_append_sheet(wb, ws2, 'Detalhes');
+    const gab=[]; for(let q=1;q<=S.n;q++) gab.push({'Questão':q,'Gabarito':S.key[q]||'(sem gabarito)','Valor (pts)':S.key[q]?peso(q):''});
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(gab), 'Gabarito');
+    const d=new Date(), stamp=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}`;
+    const xname=`Notas_${prova}_${stamp}.xlsx`;
+    await writeFile(S.dst, xname, XLSX.write(wb,{bookType:'xlsx',type:'array'}));
+    log(`✓ Excel criado: ${xname}`);
+    log('Concluído.');
+  }catch(e){
+    log('Erro: '+e.message,'warn');
+  }finally{ $('#go').disabled=false; }
+};
+
+loadCfg(); renderKey();
+
+</script>
+</body>
+</html>
