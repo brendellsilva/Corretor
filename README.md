@@ -1,8 +1,14 @@
 # Corretor de Provas
 
-Ferramenta web para professores: escolhe uma pasta de origem com as fotos das provas (uma subpasta por aluno) e uma pasta de destino. A IA lê as alternativas marcadas, o professor revê, e a ferramenta copia as fotos renomeadas e gera um Excel com as notas e os detalhes de cada aluno.
+Ferramenta web para professores, para provas de múltipla escolha e questões abertas: escolhe uma pasta de origem com as fotos das provas (uma subpasta por aluno) e uma pasta de destino. A IA lê as alternativas marcadas, o professor revê, e a ferramenta copia as fotos renomeadas e gera um Excel com as notas e os detalhes de cada aluno.
 
 Funciona no Chrome ou Edge de computador.
+
+## Questões abertas
+
+No gabarito, escolha "Aberta" na questão e escreva a resposta esperada e os critérios com pontos. A IA transcreve a resposta do aluno tal como foi escrita (palavras duvidosas ficam destacadas), sugere a nota com uma justificação e um nível de confiança. A professora confirma ou ajusta cada nota. O Excel guarda a transcrição, a sugestão da IA, a nota final e se foi revista.
+
+Para letra difícil, pode usar um modelo mais forte definindo `MODELO` na Vercel (por exemplo `claude-opus-5-5`).
 
 ## Estrutura
 

@@ -47,6 +47,20 @@
   .q button.sel.ok{background:var(--ok);border-color:var(--ok)}
   .q button.sel.bad{background:var(--bad);border-color:var(--bad)}
   .q button.gab{outline:2px dashed var(--ok);outline-offset:-3px}
+  .abcfg{display:grid;gap:8px;margin-top:12px}
+  .abcfg label{display:grid;gap:4px}
+  .abcfg textarea,.abq textarea{font:inherit;border:1px solid var(--line);border-radius:6px;padding:6px 8px;min-height:54px;resize:vertical;width:100%}
+  .abertas{display:grid;gap:10px;margin-top:12px}
+  .abq{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:grid;gap:6px}
+  .abq.pend{border-color:#f59e0b;background:#fffbeb}
+  .abq .hd{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .trans{white-space:pre-wrap;background:#fbfaf7;border:1px solid var(--line);border-radius:6px;padding:8px;font-family:Georgia,serif}
+  .trans mark{background:#fde68a;border-radius:3px;padding:0 2px}
+  .trans .ileg{background:#fecaca}
+  .conf{font-size:12px;border-radius:99px;padding:2px 8px;font-weight:600}
+  .conf.alta{background:#dcfce7;color:#166534}.conf.media{background:#fef3c7;color:#92400e}.conf.baixa{background:#fee2e2;color:#991b1b}
+  .abq .nota{width:80px}
+  .ok-txt{color:var(--ok);font-weight:600}
   #log{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;white-space:pre-wrap;max-height:260px;overflow:auto;background:#fbfaf7;border:1px solid var(--line);border-radius:6px;padding:10px;margin-top:10px}
   #log:empty{display:none}
   .warn{color:var(--warn)}
@@ -92,7 +106,8 @@
       <button id="dist10">Distribuir 10 pontos igualmente</button>
     </div>
     <div id="key" class="keygrid kgrid2"></div>
-    <p style="margin:10px 0 0"><b id="totPts"></b> <span class="muted">Cada questão: gabarito e valor em pontos. Questões sem gabarito (—) não entram na nota.</span></p>
+    <p style="margin:10px 0 0"><b id="totPts"></b> <span class="muted">Cada questão: gabarito (letra ou "Aberta") e valor em pontos. Questões sem gabarito (—) não entram na nota.</span></p>
+    <div id="abCfg" class="abcfg"></div>
   </section>
 
   <section class="card">
@@ -142,7 +157,9 @@ const IMG_RE = /\.(jpe?g|png|webp|gif|bmp)$/i;
 const LETRAS = ['A','B','C','D'];
 const DEFAULT = { prova:'M0504', n:22, peso:{},
   key:{1:'B',2:'C',3:'D',4:'A',5:'D',6:'A',7:'C',8:'B',9:'A',10:'B',11:'D',12:'A',20:'B',21:'B',22:'C'} };
-const S = { prova:'', n:0, key:{}, peso:{}, src:null, dst:null, alunos:[] };
+const S = { prova:'', n:0, key:{}, peso:{}, crit:{}, src:null, dst:null, alunos:[] };
+const ABERTA = 'AB';
+const isAb = q => S.key[q]===ABERTA;
 const peso = q => (S.peso[q] ?? 1);
 const r2 = n => Math.round(n*100)/100;
 let nextId = 1;
@@ -157,10 +174,10 @@ const log = (msg, cls) => { const d=document.createElement('div'); if(cls) d.cla
 function loadCfg(){
   let c=null; try{ c=JSON.parse(localStorage.getItem('corretor_cfg')||'null'); }catch(e){}
   const src = c || DEFAULT;
-  S.prova=src.prova; S.n=src.n; S.key={...src.key}; S.peso={...(src.peso||{})};
+  S.prova=src.prova; S.n=src.n; S.key={...src.key}; S.peso={...(src.peso||{})}; S.crit={...(src.crit||{})};
   try{ const k=localStorage.getItem('corretor_codigo'); if(k){ $('#codigo').value=k; $('#remember').checked=true; } }catch(e){}
 }
-function saveCfg(){ try{ localStorage.setItem('corretor_cfg', JSON.stringify({prova:S.prova,n:S.n,key:S.key,peso:S.peso})); }catch(e){} }
+function saveCfg(){ try{ localStorage.setItem('corretor_cfg', JSON.stringify({prova:S.prova,n:S.n,key:S.key,peso:S.peso,crit:S.crit})); }catch(e){} }
 
 function renderKey(){
   $('#prova').value=S.prova; $('#nq').value=S.n;
@@ -169,14 +186,27 @@ function renderKey(){
     const lab=document.createElement('label'); lab.className='kcell';
     lab.innerHTML=`<span>Q${pad(q)}</span>`;
     const sel=document.createElement('select');
-    ['',...LETRAS].forEach(o=>{ const op=document.createElement('option'); op.value=o; op.textContent=o||'—'; if((S.key[q]||'')===o) op.selected=true; sel.appendChild(op); });
-    sel.onchange=()=>{ if(sel.value) S.key[q]=sel.value; else delete S.key[q]; saveCfg(); renderAlunos(); };
+    ['',...LETRAS,ABERTA].forEach(o=>{ const op=document.createElement('option'); op.value=o; op.textContent= o===ABERTA ? 'Aberta' : (o||'—'); if((S.key[q]||'')===o) op.selected=true; sel.appendChild(op); });
+    sel.onchange=()=>{ if(sel.value) S.key[q]=sel.value; else delete S.key[q]; saveCfg(); renderAbCfg(); totPts(); renderAlunos(); };
     const pi=document.createElement('input'); pi.type='number'; pi.min='0'; pi.step='0.05'; pi.title='Valor em pontos'; pi.value=peso(q);
     pi.onchange=()=>{ const v=parseFloat(String(pi.value).replace(',','.')); S.peso[q]= isNaN(v)||v<0 ? 1 : v; saveCfg(); totPts(); renderAlunos(); };
     lab.appendChild(sel); lab.appendChild(pi); lab.appendChild(Object.assign(document.createElement('small'),{className:'muted',textContent:'pts'}));
     box.appendChild(lab);
   }
-  totPts();
+  totPts(); renderAbCfg();
+}
+function renderAbCfg(){
+  const box=$('#abCfg'); box.innerHTML='';
+  for(let q=1;q<=S.n;q++){
+    if(!isAb(q)) continue;
+    const lab=document.createElement('label');
+    lab.innerHTML=`<span><b>Q${pad(q)}</b> · questão aberta · vale ${fmt(peso(q))} pts</span>`;
+    const ta=document.createElement('textarea');
+    ta.placeholder='Resposta esperada e critérios com pontos. Ex.: Cita a causa da chuva (0,5). Dá um exemplo do dia a dia (0,5). Não descontar ortografia.';
+    ta.value=S.crit[q]||'';
+    ta.oninput=()=>{ S.crit[q]=ta.value; saveCfg(); };
+    lab.appendChild(ta); box.appendChild(lab);
+  }
 }
 function totPts(){
   let t=0, n=0; for(let q=1;q<=S.n;q++) if(S.key[q]){ t+=peso(q); n++; }
@@ -196,7 +226,7 @@ $('#dist10').onclick=()=>{
 };
 $('#prova').oninput=e=>{ S.prova=e.target.value.trim(); saveCfg(); };
 $('#nq').onchange=e=>{ const v=parseInt(e.target.value,10); if(v>0){ S.n=v; Object.keys(S.key).forEach(k=>{ if(+k>v) delete S.key[k]; }); saveCfg(); renderKey(); renderAlunos(); } };
-$('#resetKey').onclick=()=>{ S.prova=DEFAULT.prova; S.n=DEFAULT.n; S.key={...DEFAULT.key}; S.peso={...DEFAULT.peso}; saveCfg(); renderKey(); renderAlunos(); };
+$('#resetKey').onclick=()=>{ S.prova=DEFAULT.prova; S.n=DEFAULT.n; S.key={...DEFAULT.key}; S.peso={...DEFAULT.peso}; S.crit={}; saveCfg(); renderKey(); renderAlunos(); };
 $('#remember').onchange=()=>{ try{ if($('#remember').checked) localStorage.setItem('corretor_codigo',$('#codigo').value); else localStorage.removeItem('corretor_codigo'); }catch(e){} };
 $('#codigo').oninput=()=>{ if($('#remember').checked){ try{ localStorage.setItem('corretor_codigo',$('#codigo').value); }catch(e){} } };
 
@@ -208,7 +238,7 @@ function needFS(){
 function alertBox(msg){ $('#log').innerHTML=''; log(msg,'warn'); $('#log').scrollIntoView({behavior:'smooth'}); }
 
 async function mkImg(h){ const file=await h.getFile(); return { name:h.name, file, url:URL.createObjectURL(file), q:'' }; }
-function newAluno(nome, imgs){ imgs.sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true})); return { id:nextId++, nome, imgs, resp:{} }; }
+function newAluno(nome, imgs){ imgs.sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true})); return { id:nextId++, nome, imgs, resp:{}, ab:{} }; }
 
 $('#pickSrc').onclick=async()=>{
   if(!needFS()) return;
@@ -240,13 +270,21 @@ function updateGo(){ $('#go').disabled = !(S.src && S.dst && S.alunos.length); }
 
 /* ---------- correção ---------- */
 function score(a){
-  let corr=0, err=0, br=0, tot=0, nota=0, max=0;
+  let corr=0, err=0, br=0, tot=0, nota=0, max=0, parc=0, pend=0;
   for(let q=1;q<=S.n;q++){
     if(!S.key[q]) continue; tot++; max+=peso(q);
+    if(isAb(q)){
+      const o=a.ab[q];
+      if(!o || o.nota==null){ br++; pend++; continue; }
+      if(!o.revisado) pend++;
+      const v=Math.min(Math.max(o.nota,0),peso(q)); nota+=v;
+      if(v>=peso(q)) corr++; else if(v>0) parc++; else err++;
+      continue;
+    }
     const r=a.resp[q];
     if(!r || r==='-') br++; else if(r===S.key[q]){ corr++; nota+=peso(q); } else err++;
   }
-  return {corr, err, br, tot, nota:r2(nota), max:r2(max)};
+  return {corr, err, br, tot, parc, pend, nota:r2(nota), max:r2(max)};
 }
 
 function cardAluno(a){
@@ -255,8 +293,9 @@ function cardAluno(a){
   el.innerHTML=`<div class="ahead">
       <input class="nome" placeholder="Nome do aluno (obrigatório)" value="${esc(a.nome)}">
       <span class="pill">${sc.corr}/${sc.tot} acertos · ${fmt(sc.nota)} de ${fmt(sc.max)} pts</span>
+      ${sc.pend ? `<span class="pill" style="background:#fef3c7;color:#92400e">${sc.pend} aberta(s) por rever</span>` : ''}
       <button class="ia">Ler com IA</button><span class="ast"></span>
-    </div><div class="thumbs"></div><div class="resp"></div>`;
+    </div><div class="thumbs"></div><div class="resp"></div><div class="abertas"></div>`;
   el.querySelector('.nome').oninput=e=>{ a.nome=e.target.value; };
   el.querySelector('.ia').onclick=()=>lerIA(a);
   const th=el.querySelector('.thumbs');
@@ -269,6 +308,7 @@ function cardAluno(a){
   });
   const rp=el.querySelector('.resp');
   for(let q=1;q<=S.n;q++){
+    if(isAb(q)) continue;
     const k=S.key[q], r=a.resp[q];
     const row=document.createElement('div'); row.className='q'+(k?'':' nokey');
     row.innerHTML=`<b>Q${pad(q)}</b>`; row.title=`Vale ${fmt(peso(q))} pts`;
@@ -282,7 +322,30 @@ function cardAluno(a){
     });
     rp.appendChild(row);
   }
+  const abx=el.querySelector('.abertas');
+  for(let q=1;q<=S.n;q++){
+    if(!isAb(q)) continue;
+    const o=a.ab[q] || {};
+    const d=document.createElement('div'); d.className='abq'+(o.revisado?'':' pend');
+    const conf = o.confianca ? `<span class="conf ${esc(o.confianca)}">confiança ${esc(o.confianca)}</span>` : '';
+    const sug = o.pontosIA!=null ? `<span class="muted">IA sugere ${fmt(o.pontosIA)}</span>` : '';
+    d.innerHTML=`<div class="hd"><b>Q${pad(q)}</b><span class="muted">aberta · vale ${fmt(peso(q))} pts</span>${conf}${sug}</div>
+      <div class="trans">${o.transcricao!=null ? marcar(o.transcricao) : '<span class="muted">Ainda não lida. Use "Ler com IA" ou escreva a nota à mão.</span>'}</div>
+      ${o.justificativa ? `<div class="muted">${esc(o.justificativa)}</div>` : ''}
+      <div class="row"><label>Nota <input class="nota" type="number" min="0" max="${peso(q)}" step="0.05" value="${o.nota!=null?o.nota:''}"></label>
+      ${o.revisado ? '<span class="ok-txt">✓ revista</span>' : '<button class="conf-btn">Confirmar nota</button>'}</div>`;
+    d.querySelector('.nota').onchange=e=>{
+      const v=parseFloat(String(e.target.value).replace(',','.'));
+      a.ab[q]={...o, nota: isNaN(v)?null:Math.min(Math.max(v,0),peso(q)), revisado: !isNaN(v)}; refresh(a);
+    };
+    const cb=d.querySelector('.conf-btn');
+    if(cb) cb.onclick=()=>{ const v=parseFloat(String(d.querySelector('.nota').value).replace(',','.')); if(isNaN(v)) return; a.ab[q]={...o, nota:Math.min(Math.max(v,0),peso(q)), revisado:true}; refresh(a); };
+    abx.appendChild(d);
+  }
   return el;
+}
+function marcar(t){
+  return esc(t).replace(/\[\?(.*?)\?\]/g,'<mark title="leitura duvidosa">$1?</mark>').replace(/\[ilegível\]/gi,'<mark class="ileg">[ilegível]</mark>');
 }
 function refresh(a){ const old=document.getElementById('al'+a.id); if(old) old.replaceWith(cardAluno(a)); resumo(); }
 function renderAlunos(){
@@ -312,18 +375,33 @@ async function lerIA(a){
   if(!codigo){ st().textContent='Indique o código de acesso acima.'; st().className='ast warn'; return; }
   st().className='ast';
   let falhas=0;
+  const abertas={}; for(let q=1;q<=S.n;q++) if(isAb(q)) abertas[q]={valor:peso(q), criterio:S.crit[q]||''};
+  const vistas=new Set();
   for(let i=0;i<a.imgs.length;i++){
     st().textContent=`A ler foto ${i+1} de ${a.imgs.length}…`;
     try{
       const res=await fetch('/api/ler',{method:'POST',headers:{'content-type':'application/json'},
-        body:JSON.stringify({codigo, imagem:await toB64(a.imgs[i].file)})});
+        body:JSON.stringify({codigo, imagem:await toB64(a.imgs[i].file), abertas})});
       const j=await res.json().catch(()=>({}));
       if(!res.ok) throw new Error(j.erro || ('HTTP '+res.status));
       if(j.nome && !a.nome.trim()) a.nome=j.nome;
       if(Array.isArray(j.questoes)) a.imgs[i].q=j.questoes.join(',');
       Object.entries(j.respostas||{}).forEach(([q,r])=>{
         q=parseInt(q,10); r=String(r||'-').trim().toUpperCase();
-        if(q>=1 && q<=S.n) a.resp[q] = LETRAS.includes(r) ? r : '-';
+        if(q>=1 && q<=S.n && !isAb(q)) a.resp[q] = LETRAS.includes(r) ? r : '-';
+      });
+      Object.entries(j.abertas||{}).forEach(([q,o])=>{
+        q=parseInt(q,10); if(!(q>=1 && q<=S.n) || !isAb(q) || !o) return;
+        const pts = typeof o.pontos==='number' ? Math.min(Math.max(o.pontos,0),peso(q)) : null;
+        const novo={ transcricao:String(o.transcricao??''), pontosIA:pts, nota:pts, justificativa:String(o.justificativa||''), confianca:['alta','media','baixa'].includes(o.confianca)?o.confianca:'baixa', revisado:false };
+        if(vistas.has(q) && a.ab[q]){
+          const ant=a.ab[q];
+          novo.transcricao=ant.transcricao+'\n'+novo.transcricao;
+          novo.pontosIA=novo.nota=Math.max(ant.pontosIA??0, pts??0);
+          novo.justificativa='Resposta em mais de uma foto, avalie o conjunto. '+novo.justificativa;
+          novo.confianca='baixa';
+        }
+        vistas.add(q); a.ab[q]=novo;
       });
     }catch(e){
       falhas++;
@@ -332,7 +410,7 @@ async function lerIA(a){
   }
   refresh(a);
   st().className = falhas ? 'ast warn' : 'ast';
-  st().textContent = falhas ? `${falhas} foto(s) não foram lidas, preencha à mão.` : 'Lido pela IA, revise as marcações.';
+  st().textContent = falhas ? `${falhas} foto(s) não foram lidas, preencha à mão.` : 'Lido pela IA, revise as marcações e confirme as notas das abertas.';
 }
 $('#iaAll').onclick=async()=>{ for(const a of S.alunos) await lerIA(a); };
 
@@ -372,25 +450,33 @@ $('#go').onclick=async()=>{
         ficheiros.push(nm);
       }
       const sc=score(a);
-      resumoRows.push({'Aluno':nome,'Prova':S.prova,'Questões corrigidas':sc.tot,'Acertos':sc.corr,'Erros':sc.err,'Em branco / sem resposta':sc.br,
+      if(sc.pend) log(`⚠ ${a.nome.trim()}: ${sc.pend} questão(ões) aberta(s) sem revisão da professora.`,'warn');
+      resumoRows.push({'Aluno':nome,'Prova':S.prova,'Questões corrigidas':sc.tot,'Acertos':sc.corr,'Parciais':sc.parc,'Erros':sc.err,'Em branco / sem resposta':sc.br,'Abertas por rever':sc.pend,
         '% Acerto': sc.tot? Math.round(sc.corr/sc.tot*1000)/10 : 0, 'Nota (pontos)':sc.nota, 'Pontos possíveis':sc.max,'Fotos':ficheiros.length,'Pasta':pasta});
       for(let q=1;q<=S.n;q++){
         const k=S.key[q], r=a.resp[q];
+        if(isAb(q)){
+          const o=a.ab[q]||{};
+          const res = o.nota==null ? 'Sem nota' : (o.nota>=peso(q) ? 'Certa' : (o.nota>0 ? 'Parcial' : 'Errada'));
+          detRows.push({'Aluno':nome,'Questão':q,'Tipo':'Aberta','Marcada':'','Gabarito':'','Resultado':res,'Valor (pts)':peso(q),'Pontos obtidos':o.nota??0,
+            'Transcrição':o.transcricao||'','Sugestão IA (pts)':o.pontosIA??'','Justificativa IA':o.justificativa||'','Confiança':o.confianca||'','Revista pela professora':o.revisado?'Sim':'Não'});
+          continue;
+        }
         if(!k && !r) continue;
         let res = !k ? 'Sem gabarito' : (!r ? 'Sem resposta' : (r==='-' ? 'Em branco/anulada' : (r===k ? 'Certa' : 'Errada')));
-        detRows.push({'Aluno':nome,'Questão':q,'Marcada':r==='-'?'∅':(r||''),'Gabarito':k||'','Resultado':res,'Valor (pts)':k?peso(q):'','Pontos obtidos':res==='Certa'?peso(q):0});
+        detRows.push({'Aluno':nome,'Questão':q,'Tipo':'Objetiva','Marcada':r==='-'?'∅':(r||''),'Gabarito':k||'','Resultado':res,'Valor (pts)':k?peso(q):'','Pontos obtidos':res==='Certa'?peso(q):0});
       }
       log(`✓ ${nome}: ${sc.corr}/${sc.tot} acertos, ${fmt(sc.nota)} de ${fmt(sc.max)} pts · ${ficheiros.length} foto(s) em /${pasta}`);
     }
     const wb=XLSX.utils.book_new();
     const ws1=XLSX.utils.json_to_sheet(resumoRows);
-    ws1['!cols']=[{wch:32},{wch:10},{wch:18},{wch:9},{wch:8},{wch:22},{wch:10},{wch:13},{wch:15},{wch:7},{wch:30}];
+    ws1['!cols']=[{wch:32},{wch:10},{wch:18},{wch:9},{wch:9},{wch:8},{wch:22},{wch:17},{wch:10},{wch:13},{wch:15},{wch:7},{wch:30}];
     XLSX.utils.book_append_sheet(wb, ws1, 'Notas');
     const ws2=XLSX.utils.json_to_sheet(detRows);
-    ws2['!cols']=[{wch:32},{wch:9},{wch:9},{wch:9},{wch:18},{wch:11},{wch:14}];
+    ws2['!cols']=[{wch:32},{wch:9},{wch:10},{wch:9},{wch:9},{wch:12},{wch:11},{wch:14},{wch:60},{wch:16},{wch:50},{wch:11},{wch:22}];
     ws2['!autofilter']={ref:ws2['!ref']};
     XLSX.utils.book_append_sheet(wb, ws2, 'Detalhes');
-    const gab=[]; for(let q=1;q<=S.n;q++) gab.push({'Questão':q,'Gabarito':S.key[q]||'(sem gabarito)','Valor (pts)':S.key[q]?peso(q):''});
+    const gab=[]; for(let q=1;q<=S.n;q++) gab.push({'Questão':q,'Gabarito': isAb(q)?'Aberta':(S.key[q]||'(sem gabarito)'),'Valor (pts)':S.key[q]?peso(q):'','Critério (abertas)':isAb(q)?(S.crit[q]||''):''});
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(gab), 'Gabarito');
     const d=new Date(), stamp=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}`;
     const xname=`Notas_${prova}_${stamp}.xlsx`;
