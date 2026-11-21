@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Corretor de Provas</title>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <style>
   :root{--bg:#f6f5f1;--card:#fff;--ink:#1d2433;--muted:#6b7280;--line:#e3e1da;--acc:#1f5eff;--ok:#16a34a;--bad:#dc2626;--warn:#b45309}
   *{box-sizing:border-box}
@@ -61,6 +62,19 @@
   .conf.alta{background:#dcfce7;color:#166534}.conf.media{background:#fef3c7;color:#92400e}.conf.baixa{background:#fee2e2;color:#991b1b}
   .abq .nota{width:80px}
   .ok-txt{color:var(--ok);font-weight:600}
+  .lote{display:flex;gap:8px;overflow-x:auto;padding:6px 0}
+  .lote .lt{position:relative;flex:0 0 72px}
+  .lote img{width:72px;height:92px;object-fit:cover;border-radius:6px;border:1px solid var(--line)}
+  .lote .lt span{position:absolute;left:4px;top:4px;background:rgba(0,0,0,.6);color:#fff;font-size:11px;border-radius:4px;padding:0 4px}
+  .lote .lt button{position:absolute;right:2px;top:2px;padding:0 6px;font-size:12px;line-height:18px}
+  .thumb .tb{display:flex;gap:4px}
+  .thumb .tb button{font-size:11px;padding:2px 6px}
+  .thumb.err img{border-color:var(--bad)}
+  .big{font-size:15px;padding:10px 16px}
+  label.filebtn{display:inline-block;border:1px solid var(--line);background:#fff;border-radius:7px;padding:7px 12px;cursor:pointer}
+  label.filebtn.primary{background:var(--acc);border-color:var(--acc);color:#fff}
+  label.filebtn input{display:none}
+  @media (max-width:640px){ main{padding:12px 10px 80px} header{padding:12px} .aluno .nome{min-width:0} .resp{grid-template-columns:1fr} }
   #log{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;white-space:pre-wrap;max-height:260px;overflow:auto;background:#fbfaf7;border:1px solid var(--line);border-radius:6px;padding:10px;margin-top:10px}
   #log:empty{display:none}
   .warn{color:var(--warn)}
@@ -82,12 +96,12 @@
     <details>
       <summary>Como usar</summary>
       <ol class="muted">
-        <li>Na pasta de origem, crie <b>uma subpasta por aluno</b> com as fotos da prova dele (o nome da subpasta vira o nome do aluno). Fotos soltas na raiz contam como um único aluno.</li>
-        <li>Confira o gabarito abaixo (fica guardado neste navegador).</li>
-        <li>Para cada aluno: clique nas alternativas marcadas, ou use <b>Ler com IA</b> e revise. Em cada foto, indique as questões que ela contém (ex.: <code>6,7</code>) para o nome do ficheiro.</li>
-        <li>Escolha a pasta de destino e clique em <b>Processar</b>. É criada uma subpasta por aluno com as fotos renomeadas e um Excel com as notas e os detalhes.</li>
+        <li>Confira o gabarito e o valor de cada questão (fica guardado neste navegador).</li>
+        <li><b>No telemóvel:</b> toque em <b>Tirar foto</b> para cada página, em sequência, aluno a aluno. Ou escolha fotos já tiradas da galeria.</li>
+        <li><b>No computador:</b> escolha uma pasta com as fotos em sequência, ou com uma subpasta por aluno.</li>
+        <li>Toque em <b>Ler e separar por aluno</b>. A IA encontra a primeira página de cada aluno, lê o nome e as respostas. Revise: pode separar ou juntar alunos se a IA se enganar.</li>
+        <li>Toque em <b>Processar</b>. No computador, com pasta de destino, grava uma pasta por aluno e o Excel. Sem pasta de destino (ou no telemóvel), descarrega tudo num ZIP.</li>
       </ol>
-      <p class="muted">Funciona no Chrome ou Edge de computador (precisa de acesso a pastas locais).</p>
     </details>
   </section>
 
@@ -111,14 +125,25 @@
   </section>
 
   <section class="card">
-    <h2>2. Pastas</h2>
+    <h2>2. Fotos das provas</h2>
     <div class="row" style="margin-bottom:8px">
-      <button id="pickSrc">Escolher pasta de origem</button>
-      <span id="srcPath" class="path">nenhuma</span>
+      <label class="filebtn primary big">📷 Tirar foto<input id="cam" type="file" accept="image/*" capture="environment"></label>
+      <label class="filebtn big">Escolher fotos<input id="gal" type="file" accept="image/*" multiple></label>
+      <button id="pickSrc" class="fsonly">Escolher pasta de origem</button>
+      <span id="srcPath" class="path fsonly">nenhuma</span>
     </div>
-    <div class="row">
+    <p class="muted" style="margin:4px 0">Fotografe as provas em sequência: a primeira página de cada aluno (com o nome) e as seguintes, depois a primeira página do próximo aluno, e assim por diante. A ferramenta separa por aluno.</p>
+    <div id="loteBox" style="display:none">
+      <div class="row" style="justify-content:space-between">
+        <b id="loteInfo"></b>
+        <span class="row"><button id="loteClear">Limpar fotos</button><button id="loteGo" class="primary">Ler e separar por aluno</button></span>
+      </div>
+      <div id="lote" class="lote"></div>
+      <div id="loteSt" class="ast"></div>
+    </div>
+    <div class="row fsonly" style="margin-top:10px">
       <button id="pickDst">Escolher pasta de destino</button>
-      <span id="dstPath" class="path">nenhuma</span>
+      <span id="dstPath" class="path">nenhuma (o resultado é descarregado em ZIP)</span>
     </div>
   </section>
 
@@ -136,14 +161,14 @@
       <h2 style="font-size:15px;margin:0">3. Alunos <span id="resumo" class="muted"></span></h2>
       <button id="iaAll">Ler todos com IA</button>
     </div>
-    <div id="alunos"><div class="card empty">Escolha a pasta de origem para carregar os alunos.</div></div>
+    <div id="alunos"><div class="card empty">Tire ou escolha as fotos das provas para começar.</div></div>
   </section>
 
   <section class="card">
     <h2>4. Processar</h2>
     <div class="row">
-      <button id="go" class="primary" disabled>Processar e gerar Excel</button>
-      <span class="muted">Copia as fotos renomeadas (os originais não são alterados).</span>
+      <button id="go" class="primary big" disabled>Processar e gerar Excel</button>
+      <span id="goHint" class="muted">Copia as fotos renomeadas (os originais não são alterados).</span>
     </div>
     <div id="log"></div>
   </section>
@@ -231,13 +256,103 @@ $('#remember').onchange=()=>{ try{ if($('#remember').checked) localStorage.setIt
 $('#codigo').oninput=()=>{ if($('#remember').checked){ try{ localStorage.setItem('corretor_codigo',$('#codigo').value); }catch(e){} } };
 
 /* ---------- pastas ---------- */
+const HAS_FS = !!window.showDirectoryPicker;
+S.lote = [];
 function needFS(){
   if(!window.showDirectoryPicker){ alertBox('Este navegador não permite escolher pastas. Abra o ficheiro no Chrome ou Edge de computador.'); return false; }
   return true;
 }
 function alertBox(msg){ $('#log').innerHTML=''; log(msg,'warn'); $('#log').scrollIntoView({behavior:'smooth'}); }
 
-async function mkImg(h){ const file=await h.getFile(); return { name:h.name, file, url:URL.createObjectURL(file), q:'' }; }
+async function mkImg(h){ const file=await h.getFile(); return mkImgFile(file); }
+function mkImgFile(file, name){ return { name:name||file.name, file, url:URL.createObjectURL(file), q:'' }; }
+let fotoN=0;
+
+/* ---------- lote de fotos em sequência ---------- */
+function renderLote(){
+  const box=$('#lote'); box.innerHTML='';
+  $('#loteBox').style.display = S.lote.length ? '' : 'none';
+  $('#loteInfo').textContent = `${S.lote.length} foto(s) por separar`;
+  S.lote.forEach((img,i)=>{
+    const d=document.createElement('div'); d.className='lt';
+    d.innerHTML=`<img src="${img.url}" alt=""><span>${i+1}</span><button title="Remover">×</button>`;
+    d.querySelector('img').onclick=()=>{ $('#modal img').src=img.url; $('#modal').style.display='flex'; };
+    d.querySelector('button').onclick=()=>{ URL.revokeObjectURL(img.url); S.lote.splice(i,1); renderLote(); };
+    box.appendChild(d);
+  });
+  box.scrollLeft=1e9;
+}
+function addFotos(files){
+  for(const f of files){
+    if(!f || !/^image\//.test(f.type||'') && !IMG_RE.test(f.name||'')) continue;
+    fotoN++;
+    const ext=(String(f.name||'').match(/\.[^.]+$/)||['.jpg'])[0];
+    S.lote.push(mkImgFile(f, `foto_${String(fotoN).padStart(3,'0')}${ext}`));
+  }
+  renderLote();
+}
+$('#cam').onchange=e=>{ addFotos([...e.target.files]); e.target.value=''; };
+$('#gal').onchange=e=>{ addFotos([...e.target.files].sort((a,b)=>(a.lastModified-b.lastModified)||a.name.localeCompare(b.name,undefined,{numeric:true}))); e.target.value=''; };
+$('#loteClear').onclick=()=>{ S.lote.forEach(i=>URL.revokeObjectURL(i.url)); S.lote=[]; renderLote(); };
+$('#loteGo').onclick=()=>separarLote();
+
+async function separarLote(){
+  const st=$('#loteSt');
+  const codigo=$('#codigo').value.trim();
+  if(!codigo){ st.className='ast warn'; st.textContent='Indique o código de acesso (mais abaixo) para a leitura automática.'; $('#codigo').scrollIntoView({behavior:'smooth'}); return; }
+  if(!S.lote.length) return;
+  const fotos=S.lote.slice(); const res=new Array(fotos.length); let feitas=0, falhas=0;
+  $('#loteGo').disabled=true; st.className='ast';
+  st.textContent=`A ler 0 de ${fotos.length} fotos…`;
+  let next=0;
+  async function worker(){
+    while(next<fotos.length){
+      const i=next++;
+      try{ res[i]=await lerFoto(fotos[i], codigo); }
+      catch(e){ res[i]={erro:e.message}; falhas++; if(/código/i.test(e.message)) next=fotos.length; }
+      feitas++; st.textContent=`A ler ${feitas} de ${fotos.length} fotos…`;
+    }
+  }
+  await Promise.all([worker(),worker(),worker(),worker()]);
+  if(res.some(r=>r && r.erro && /código/i.test(r.erro))){ st.className='ast warn'; st.textContent='Código de acesso inválido.'; $('#loteGo').disabled=false; return; }
+  let cur=null, novos=0;
+  const vistasPorAluno=new Map();
+  fotos.forEach((img,i)=>{
+    const j=res[i]||{};
+    if(!cur || (j && j.primeira_pagina)){
+      cur=newAluno(j.nome||'', []); S.alunos.push(cur); novos++; vistasPorAluno.set(cur,new Set());
+    }
+    cur.imgs.push(img);
+    if(j.erro){ img.erro=true; return; }
+    aplicar(cur, img, j, vistasPorAluno.get(cur));
+  });
+  S.lote=[]; renderLote(); renderAlunos(); updateGo();
+  st.className = falhas ? 'ast warn' : 'ast';
+  st.textContent = `${novos} aluno(s) encontrado(s).` + (falhas ? ` ${falhas} foto(s) não foram lidas (borda vermelha), preencha à mão.` : ' Revise nomes, separações e respostas.');
+  $('#loteGo').disabled=false;
+  const box=document.getElementById('alunos'); if(box) box.scrollIntoView({behavior:'smooth'});
+}
+
+/* ---------- separar / juntar alunos ---------- */
+// Refaz as respostas do aluno a partir da leitura de cada foto (as correções manuais desse aluno voltam à leitura da IA).
+function reconstruir(a){
+  a.resp={}; a.ab={}; const vistas=new Set();
+  a.imgs.forEach(img=>{ if(img.j) aplicar(a, img, img.j, vistas); });
+}
+function separarAqui(a, i){
+  const moved=a.imgs.splice(i);
+  const novo=newAluno(moved[0].nomeIA||'', []); novo.imgs=moved;
+  reconstruir(a); reconstruir(novo);
+  S.alunos.splice(S.alunos.indexOf(a)+1, 0, novo); renderAlunos();
+}
+function juntarAnterior(a){
+  const idx=S.alunos.indexOf(a); if(idx<1) return;
+  const prev=S.alunos[idx-1];
+  prev.imgs.push(...a.imgs);
+  if(!prev.nome.trim() && a.nome.trim()) prev.nome=a.nome;
+  reconstruir(prev);
+  S.alunos.splice(idx,1); renderAlunos();
+}
 function newAluno(nome, imgs){ imgs.sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true})); return { id:nextId++, nome, imgs, resp:{}, ab:{} }; }
 
 $('#pickSrc').onclick=async()=>{
@@ -255,18 +370,26 @@ $('#pickSrc').onclick=async()=>{
     }
   }
   S.alunos.sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
-  if(raiz.length) S.alunos.push(newAluno('', raiz));
+  raiz.sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true}));
+  S.lote.push(...raiz);
   const nImg=S.alunos.reduce((s,a)=>s+a.imgs.length,0);
-  $('#srcPath').textContent=`${h.name} · ${S.alunos.length} aluno(s), ${nImg} foto(s)`;
-  renderAlunos(); updateGo();
-  if($('#codigo').value.trim() && S.alunos.length){ for(const a of S.alunos) await lerIA(a); }
+  $('#srcPath').textContent=`${h.name} · ${S.alunos.length} subpasta(s) de aluno, ${nImg + raiz.length} foto(s)`;
+  renderLote(); renderAlunos(); updateGo();
+  if($('#codigo').value.trim()){
+    for(const a of S.alunos) await lerIA(a);
+    if(S.lote.length) await separarLote();
+  }
 };
 $('#pickDst').onclick=async()=>{
   if(!needFS()) return;
   try{ S.dst=await window.showDirectoryPicker({mode:'readwrite'}); }catch(e){ return; }
   $('#dstPath').textContent=S.dst.name; $('#dstPath').classList.add('set'); updateGo();
 };
-function updateGo(){ $('#go').disabled = !(S.src && S.dst && S.alunos.length); }
+function updateGo(){
+  $('#go').disabled = !S.alunos.length;
+  $('#go').textContent = S.dst ? 'Processar e gravar na pasta' : 'Processar e descarregar ZIP';
+  $('#goHint').textContent = S.dst ? 'Grava uma pasta por aluno e o Excel na pasta de destino (os originais não são alterados).' : 'Descarrega um ZIP com uma pasta por aluno, as fotos renomeadas e o Excel.';
+}
 
 /* ---------- correção ---------- */
 function score(a){
@@ -294,14 +417,16 @@ function cardAluno(a){
       <input class="nome" placeholder="Nome do aluno (obrigatório)" value="${esc(a.nome)}">
       <span class="pill">${sc.corr}/${sc.tot} acertos · ${fmt(sc.nota)} de ${fmt(sc.max)} pts</span>
       ${sc.pend ? `<span class="pill" style="background:#fef3c7;color:#92400e">${sc.pend} aberta(s) por rever</span>` : ''}
-      <button class="ia">Ler com IA</button><span class="ast"></span>
+      <button class="ia">Ler com IA</button>${S.alunos.indexOf(a)>0 ? '<button class="merge" title="A IA separou este aluno por engano">Juntar ao aluno anterior</button>' : ''}<span class="ast"></span>
     </div><div class="thumbs"></div><div class="resp"></div><div class="abertas"></div>`;
   el.querySelector('.nome').oninput=e=>{ a.nome=e.target.value; };
   el.querySelector('.ia').onclick=()=>lerIA(a);
+  const mg=el.querySelector('.merge'); if(mg) mg.onclick=()=>juntarAnterior(a);
   const th=el.querySelector('.thumbs');
-  a.imgs.forEach(img=>{
-    const d=document.createElement('div'); d.className='thumb';
-    d.innerHTML=`<img src="${img.url}" alt=""><small title="${esc(img.name)}">${esc(img.name)}</small><input placeholder="Questões ex: 6,7" value="${esc(img.q)}">`;
+  a.imgs.forEach((img,i)=>{
+    const d=document.createElement('div'); d.className='thumb'+(img.erro?' err':'');
+    d.innerHTML=`<img src="${img.url}" alt=""><small title="${esc(img.name)}">${esc(img.name)}</small><input placeholder="Questões ex: 6,7" value="${esc(img.q)}">${i>0?'<div class="tb"><button title="Esta foto é a primeira página de outro aluno">Novo aluno daqui</button></div>':''}`;
+    const sb=d.querySelector('.tb button'); if(sb) sb.onclick=()=>separarAqui(a,i);
     d.querySelector('img').onclick=()=>{ $('#modal img').src=img.url; $('#modal').style.display='flex'; };
     d.querySelector('input').oninput=e=>{ img.q=e.target.value; };
     th.appendChild(d);
@@ -350,7 +475,7 @@ function marcar(t){
 function refresh(a){ const old=document.getElementById('al'+a.id); if(old) old.replaceWith(cardAluno(a)); resumo(); }
 function renderAlunos(){
   const box=$('#alunos'); box.innerHTML='';
-  if(!S.alunos.length){ box.innerHTML='<div class="card empty">Escolha a pasta de origem para carregar os alunos.</div>'; resumo(); return; }
+  if(!S.alunos.length){ box.innerHTML='<div class="card empty">Tire ou escolha as fotos das provas para começar.</div>'; resumo(); return; }
   S.alunos.forEach(a=>box.appendChild(cardAluno(a))); resumo();
 }
 function resumo(){
@@ -369,42 +494,47 @@ async function toB64(file){
   c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
   return c.toDataURL('image/jpeg',0.85).split(',')[1];
 }
+function abertasCfg(){ const o={}; for(let q=1;q<=S.n;q++) if(isAb(q)) o[q]={valor:peso(q), criterio:S.crit[q]||''}; return o; }
+async function lerFoto(img, codigo){
+  const res=await fetch('/api/ler',{method:'POST',headers:{'content-type':'application/json'},
+    body:JSON.stringify({codigo, imagem:await toB64(img.file), abertas:abertasCfg()})});
+  const j=await res.json().catch(()=>({}));
+  if(!res.ok) throw new Error(j.erro || ('HTTP '+res.status));
+  return j;
+}
+function aplicar(a, img, j, vistas){
+  img.erro=false; img.j=j;
+  if(j.nome){ img.nomeIA=j.nome; if(!a.nome.trim()) a.nome=j.nome; }
+  if(Array.isArray(j.questoes)) img.q=j.questoes.join(',');
+  Object.entries(j.respostas||{}).forEach(([q,r])=>{
+    q=parseInt(q,10); r=String(r||'-').trim().toUpperCase();
+    if(q>=1 && q<=S.n && !isAb(q)) a.resp[q] = LETRAS.includes(r) ? r : '-';
+  });
+  Object.entries(j.abertas||{}).forEach(([q,o])=>{
+    q=parseInt(q,10); if(!(q>=1 && q<=S.n) || !isAb(q) || !o) return;
+    const pts = typeof o.pontos==='number' ? Math.min(Math.max(o.pontos,0),peso(q)) : null;
+    const novo={ transcricao:String(o.transcricao??''), pontosIA:pts, nota:pts, justificativa:String(o.justificativa||''), confianca:['alta','media','baixa'].includes(o.confianca)?o.confianca:'baixa', revisado:false };
+    if(vistas.has(q) && a.ab[q]){
+      const ant=a.ab[q];
+      novo.transcricao=ant.transcricao+'\n'+novo.transcricao;
+      novo.pontosIA=novo.nota=Math.max(ant.pontosIA??0, pts??0);
+      novo.justificativa='Resposta em mais de uma foto, avalie o conjunto. '+novo.justificativa;
+      novo.confianca='baixa';
+    }
+    vistas.add(q); a.ab[q]=novo;
+  });
+}
 async function lerIA(a){
   const st=()=>document.querySelector('#al'+a.id+' .ast');
   const codigo=$('#codigo').value.trim();
   if(!codigo){ st().textContent='Indique o código de acesso acima.'; st().className='ast warn'; return; }
   st().className='ast';
-  let falhas=0;
-  const abertas={}; for(let q=1;q<=S.n;q++) if(isAb(q)) abertas[q]={valor:peso(q), criterio:S.crit[q]||''};
-  const vistas=new Set();
+  let falhas=0; const vistas=new Set();
   for(let i=0;i<a.imgs.length;i++){
     st().textContent=`A ler foto ${i+1} de ${a.imgs.length}…`;
-    try{
-      const res=await fetch('/api/ler',{method:'POST',headers:{'content-type':'application/json'},
-        body:JSON.stringify({codigo, imagem:await toB64(a.imgs[i].file), abertas})});
-      const j=await res.json().catch(()=>({}));
-      if(!res.ok) throw new Error(j.erro || ('HTTP '+res.status));
-      if(j.nome && !a.nome.trim()) a.nome=j.nome;
-      if(Array.isArray(j.questoes)) a.imgs[i].q=j.questoes.join(',');
-      Object.entries(j.respostas||{}).forEach(([q,r])=>{
-        q=parseInt(q,10); r=String(r||'-').trim().toUpperCase();
-        if(q>=1 && q<=S.n && !isAb(q)) a.resp[q] = LETRAS.includes(r) ? r : '-';
-      });
-      Object.entries(j.abertas||{}).forEach(([q,o])=>{
-        q=parseInt(q,10); if(!(q>=1 && q<=S.n) || !isAb(q) || !o) return;
-        const pts = typeof o.pontos==='number' ? Math.min(Math.max(o.pontos,0),peso(q)) : null;
-        const novo={ transcricao:String(o.transcricao??''), pontosIA:pts, nota:pts, justificativa:String(o.justificativa||''), confianca:['alta','media','baixa'].includes(o.confianca)?o.confianca:'baixa', revisado:false };
-        if(vistas.has(q) && a.ab[q]){
-          const ant=a.ab[q];
-          novo.transcricao=ant.transcricao+'\n'+novo.transcricao;
-          novo.pontosIA=novo.nota=Math.max(ant.pontosIA??0, pts??0);
-          novo.justificativa='Resposta em mais de uma foto, avalie o conjunto. '+novo.justificativa;
-          novo.confianca='baixa';
-        }
-        vistas.add(q); a.ab[q]=novo;
-      });
-    }catch(e){
-      falhas++;
+    try{ aplicar(a, a.imgs[i], await lerFoto(a.imgs[i], codigo), vistas); }
+    catch(e){
+      falhas++; a.imgs[i].erro=true;
       if(/código/i.test(e.message)){ refresh(a); st().className='ast warn'; st().textContent=e.message; return; }
     }
   }
@@ -434,11 +564,12 @@ $('#go').onclick=async()=>{
   if(!Object.keys(S.key).length){ log('O gabarito está vazio.','warn'); return; }
   $('#go').disabled=true;
   const prova=safe(S.prova||'PROVA');
+  const zip = S.dst ? null : new JSZip();
   const resumoRows=[], detRows=[];
   try{
     for(const a of S.alunos){
       const nome=a.nome.trim(), pasta=safe(nome);
-      const dir=await S.dst.getDirectoryHandle(pasta,{create:true});
+      const dir = zip ? zip.folder(pasta) : await S.dst.getDirectoryHandle(pasta,{create:true});
       const usados=new Set(); const ficheiros=[];
       for(let i=0;i<a.imgs.length;i++){
         const img=a.imgs[i];
@@ -446,7 +577,7 @@ $('#go').onclick=async()=>{
         let base=`${pasta}_${prova}_${qLabel(img.q) || 'pag'+pad(i+1)}`, nm=base+ext, k=2;
         while(usados.has(nm.toLowerCase())) nm=`${base}_${k++}${ext}`;
         usados.add(nm.toLowerCase());
-        await writeFile(dir, nm, img.file);
+        if(zip) dir.file(nm, img.file); else await writeFile(dir, nm, img.file);
         ficheiros.push(nm);
       }
       const sc=score(a);
@@ -480,15 +611,28 @@ $('#go').onclick=async()=>{
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(gab), 'Gabarito');
     const d=new Date(), stamp=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}`;
     const xname=`Notas_${prova}_${stamp}.xlsx`;
-    await writeFile(S.dst, xname, XLSX.write(wb,{bookType:'xlsx',type:'array'}));
-    log(`✓ Excel criado: ${xname}`);
+    const xbuf=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+    if(zip){
+      zip.file(xname, xbuf);
+      log('A criar o ZIP…');
+      const blob=await zip.generateAsync({type:'blob'});
+      const zname=`Correcao_${prova}_${stamp}.zip`;
+      const link=document.createElement('a'); link.href=URL.createObjectURL(blob); link.download=zname;
+      document.body.appendChild(link); link.click(); link.remove();
+      setTimeout(()=>URL.revokeObjectURL(link.href), 60000);
+      log(`✓ ZIP descarregado: ${zname} (inclui o Excel ${xname})`);
+    } else {
+      await writeFile(S.dst, xname, xbuf);
+      log(`✓ Excel criado: ${xname}`);
+    }
     log('Concluído.');
   }catch(e){
     log('Erro: '+e.message,'warn');
   }finally{ $('#go').disabled=false; }
 };
 
-loadCfg(); renderKey();
+loadCfg(); renderKey(); updateGo();
+if(!HAS_FS) document.querySelectorAll('.fsonly').forEach(e=>e.style.display='none');
 
 </script>
 </body>

@@ -5,6 +5,9 @@
 const BASE = `Esta imagem é UMA página da prova de um aluno (normalmente uma criança).
 Identifique os números das questões que aparecem nesta página.
 
+PRIMEIRA PÁGINA: as fotos são tiradas em sequência, prova a prova. Diga se esta é a PRIMEIRA página da prova de um aluno
+(normalmente tem o cabeçalho com o campo do nome do aluno, a turma ou a escola, ou começa na questão 1).
+
 QUESTÕES DE MÚLTIPLA ESCOLHA: indique a alternativa que o aluno marcou (letra circulada, riscada ou com X sobre a letra).
 Se não houver marca clara, ou houver mais de uma marca, use "-".`;
 
@@ -27,7 +30,7 @@ const FORMATO = `
 
 Se o nome do aluno estiver escrito nesta página, devolva-o; caso contrário use null.
 Responda APENAS com JSON válido, sem texto extra, neste formato:
-{"nome": null, "questoes": [2, 3], "respostas": {"2": "C"}, "abertas": {"3": {"transcricao": "...", "pontos": 0.5, "justificativa": "...", "confianca": "media"}}}`;
+{"primeira_pagina": false, "nome": null, "questoes": [2, 3], "respostas": {"2": "C"}, "abertas": {"3": {"transcricao": "...", "pontos": 0.5, "justificativa": "...", "confianca": "media"}}}`;
 
 function montarPrompt(abertas) {
   const linhas = Object.entries(abertas)
@@ -101,6 +104,7 @@ export default async function handler(req, res) {
     }
 
     return res.status(200).json({
+      primeira_pagina: json.primeira_pagina === true,
       nome: json.nome ?? null,
       questoes: Array.isArray(json.questoes) ? json.questoes : [],
       respostas: json.respostas || {},

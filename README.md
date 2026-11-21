@@ -4,6 +4,12 @@ Ferramenta web para professores, para provas de múltipla escolha e questões ab
 
 Funciona no Chrome ou Edge de computador.
 
+## Fotos em sequência (telemóvel)
+
+Toque em **Tirar foto** para cada página, prova a prova: primeira página do João, páginas seguintes, primeira página do Guilherme, e assim por diante. Em **Ler e separar por aluno**, a IA reconhece a primeira página de cada aluno, lê o nome e as respostas e separa as fotos. Se errar, use **Novo aluno daqui** numa foto ou **Juntar ao aluno anterior** num aluno.
+
+Sem pasta de destino (sempre no telemóvel), o resultado é descarregado num ZIP com uma pasta por aluno e o Excel.
+
 ## Questões abertas
 
 No gabarito, escolha "Aberta" na questão e escreva a resposta esperada e os critérios com pontos. A IA transcreve a resposta do aluno tal como foi escrita (palavras duvidosas ficam destacadas), sugere a nota com uma justificação e um nível de confiança. A professora confirma ou ajusta cada nota. O Excel guarda a transcrição, a sugestão da IA, a nota final e se foi revista.
