@@ -2,501 +2,659 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
 <title>Corretor de Provas</title>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <style>
-  :root{--bg:#f6f5f1;--card:#fff;--ink:#1d2433;--muted:#6b7280;--line:#e3e1da;--acc:#1f5eff;--ok:#16a34a;--bad:#dc2626;--warn:#b45309}
-  *{box-sizing:border-box}
-  body{margin:0;font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
-  header{padding:18px 24px;border-bottom:1px solid var(--line);background:#fff;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
-  header h1{font-size:18px;margin:0}
-  header .sub{color:var(--muted)}
-  main{max-width:1200px;margin:0 auto;padding:20px 24px 80px;display:grid;gap:16px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px}
-  .card h2{font-size:15px;margin:0 0 12px}
-  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
-  button{font:inherit;border:1px solid var(--line);background:#fff;border-radius:7px;padding:7px 12px;cursor:pointer}
-  button:hover{border-color:#b9b6ab}
-  button.primary{background:var(--acc);border-color:var(--acc);color:#fff}
-  button.primary:disabled{opacity:.45;cursor:not-allowed}
-  input,select{font:inherit;border:1px solid var(--line);border-radius:6px;padding:6px 8px;background:#fff}
-  .path{color:var(--muted);font-family:ui-monospace,Menlo,monospace;font-size:13px}
-  .path.set{color:var(--ink)}
-  .keygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:6px}
-  .kcell{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:6px;padding:4px 6px}
-  .kcell span{font-weight:600;font-variant-numeric:tabular-nums;width:30px}
-  .kcell select{padding:2px 4px}
-  .kcell input{width:52px;padding:2px 4px}
-  .kgrid2{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
-  .aluno .ahead{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
-  .aluno .nome{font-size:15px;font-weight:600;min-width:260px;flex:1}
-  .pill{background:#eef2ff;color:#1e3a8a;border-radius:99px;padding:4px 10px;font-weight:600;font-variant-numeric:tabular-nums}
-  .ast{color:var(--muted);font-size:13px}
-  .thumbs{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;margin-bottom:12px}
-  .thumb{flex:0 0 120px;display:flex;flex-direction:column;gap:4px}
-  .thumb img{width:120px;height:150px;object-fit:cover;border-radius:6px;border:1px solid var(--line);cursor:zoom-in}
-  .thumb small{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .thumb input{width:100%;font-size:12px;padding:4px 6px}
-  .resp{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px}
-  .q{display:flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:6px;padding:4px 6px}
-  .q.nokey{opacity:.45}
-  .q b{width:34px;font-variant-numeric:tabular-nums}
-  .q button{padding:2px 0;width:28px;border-radius:5px;font-weight:600}
-  .q button.sel{background:var(--ink);color:#fff;border-color:var(--ink)}
-  .q button.sel.ok{background:var(--ok);border-color:var(--ok)}
-  .q button.sel.bad{background:var(--bad);border-color:var(--bad)}
-  .q button.gab{outline:2px dashed var(--ok);outline-offset:-3px}
-  .abcfg{display:grid;gap:8px;margin-top:12px}
-  .abcfg label{display:grid;gap:4px}
-  .abcfg textarea,.abq textarea{font:inherit;border:1px solid var(--line);border-radius:6px;padding:6px 8px;min-height:54px;resize:vertical;width:100%}
-  .abertas{display:grid;gap:10px;margin-top:12px}
-  .abq{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:grid;gap:6px}
-  .abq.pend{border-color:#f59e0b;background:#fffbeb}
-  .abq .hd{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-  .trans{white-space:pre-wrap;background:#fbfaf7;border:1px solid var(--line);border-radius:6px;padding:8px;font-family:Georgia,serif}
+  :root{
+    --bg:#f4f4f1;--card:#fff;--ink:#16202e;--muted:#667085;--line:#e4e2dc;
+    --acc:#2457f5;--acc-ink:#fff;--acc-soft:#e9efff;
+    --ok:#15803d;--ok-soft:#e7f6ec;--bad:#c02626;--bad-soft:#fdecec;--warn:#a85b06;--warn-soft:#fff4e0;
+    --r:14px;--bar:76px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0}
+  body{font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  button,input,select,textarea{font:inherit;color:inherit}
+  button{cursor:pointer}
+  :focus-visible{outline:3px solid var(--acc);outline-offset:2px;border-radius:8px}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+  /* Cabeçalho */
+  header{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid var(--line);padding:10px 16px 0;padding-top:max(10px,env(safe-area-inset-top))}
+  .hrow{display:flex;align-items:center;gap:12px;max-width:760px;margin:0 auto}
+  .htit{flex:1;min-width:0}
+  .htit h1{font-size:22px;margin:0;line-height:1.2}
+  .htit small{color:var(--muted);font-size:13px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .gear{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:#fff;display:grid;place-items:center;font-size:20px}
+  .steps{display:flex;max-width:760px;margin:8px auto 0;gap:4px}
+  .steps button{flex:1;border:0;background:none;padding:6px 0 10px;font-size:13px;color:var(--muted);border-bottom:3px solid transparent;display:flex;flex-direction:column;align-items:center;gap:2px}
+  .steps button b{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:#eceae4;font-size:13px;color:var(--muted)}
+  .steps button.on{color:var(--ink);border-bottom-color:var(--acc);font-weight:600}
+  .steps button.on b{background:var(--acc);color:#fff}
+  .steps button.feito b{background:var(--ok);color:#fff}
+
+  main{max-width:760px;margin:0 auto;padding:16px 16px calc(var(--bar) + 32px);overflow-x:clip}
+  .step{display:none}
+  .step.on{display:block}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px}
+  .card h2{font-size:17px;margin:0 0 4px}
+  .help{color:var(--muted);font-size:14px;margin:0 0 12px}
+  .field{display:grid;gap:6px;margin-bottom:14px}
+  .field>span{font-weight:600;font-size:15px}
+  input[type=text],input[type=password],input[type=number],textarea{border:1px solid #cfccc4;border-radius:10px;padding:11px 12px;background:#fff;width:100%;min-height:46px}
+  textarea{min-height:76px;resize:vertical}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+
+  /* Botões */
+  .btn{border:1px solid #cfccc4;background:#fff;border-radius:12px;padding:11px 16px;min-height:46px;font-weight:600;transition:transform .12s}
+  .btn:active{transform:scale(.97)}
+  .btn.pri{background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
+  .btn.pri:disabled{background:#b7c4f0;border-color:#b7c4f0;cursor:not-allowed}
+  .btn.danger{color:var(--bad);border-color:#f0c4c4}
+  .btn.ghost{border-color:transparent;background:none}
+  .btn.full{width:100%}
+  .btn.big{min-height:64px;font-size:18px;border-radius:16px}
+  .linkbtn{border:0;background:none;color:var(--acc);font-weight:600;padding:8px 4px;min-height:44px}
+
+  /* Barra de ação fixa */
+  .bar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(255,255,255,.97);border-top:1px solid var(--line);padding:10px 16px;padding-bottom:max(10px,env(safe-area-inset-bottom))}
+  .bar .in{max-width:760px;margin:0 auto;display:flex;gap:10px;align-items:center}
+  .bar .pri{flex:1}
+  .bar .note{font-size:13px;color:var(--muted);max-width:760px;margin:0 auto 6px;text-align:center}
+  .bar .note:empty{display:none}
+
+  /* Passo 1: gabarito */
+  .stepper{display:flex;align-items:center;border:1px solid #cfccc4;border-radius:12px;overflow:hidden;width:max-content}
+  .stepper button{width:48px;height:48px;border:0;background:#f6f5f1;font-size:22px}
+  .stepper input{width:64px;border:0;text-align:center;font-weight:700;font-size:18px;min-height:48px;border-radius:0}
+  .seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid #cfccc4;border-radius:12px;overflow:hidden}
+  .seg button{border:0;background:#fff;padding:10px 8px;min-height:46px;font-size:14px;font-weight:600}
+  .seg button[aria-pressed=true]{background:var(--acc);color:#fff}
+  .klist{display:grid;gap:8px}
+  .krow{border:1px solid var(--line);border-radius:12px;padding:6px}
+  .krow.sem{background:#fafaf8}
+  .kline{display:flex;align-items:center;gap:6px}
+  .qn{width:28px;font-weight:700;font-size:16px;text-align:center;flex:none}
+  .chips{display:flex;gap:5px;flex:1;flex-wrap:nowrap;min-width:0}
+  .chip{min-width:clamp(38px,10.6vw,46px);height:44px;padding:0;border-radius:10px;border:1px solid #cfccc4;background:#fff;font-weight:700;font-size:16px;transition:transform .12s}
+  .chip:active{transform:scale(.95)}
+  .chip.ab{padding:0 8px;font-size:13px;font-weight:600}
+  .chip[aria-pressed=true]{background:var(--acc);border-color:var(--acc);color:#fff}
+  .pts{display:flex;align-items:center;gap:4px;font-size:13px;color:var(--muted);flex:none}
+  .pts input{width:64px;min-height:44px;padding:6px;text-align:center}
+  .kcrit{margin-top:8px}
+  .kcrit textarea{font-size:15px}
+  .tot{font-weight:700}
+  .aviso{background:var(--warn-soft);color:var(--warn);border-radius:10px;padding:10px 12px;font-size:14px;margin:0 0 12px}
+  .aviso:empty{display:none}
+
+  /* Passo 2: fotos */
+  .camera{display:block;text-align:center;border:2px dashed #b9c6f4;background:var(--acc-soft);border-radius:18px;padding:26px 16px;cursor:pointer;transition:transform .12s}
+  .camera:active{transform:scale(.98)}
+  .camera .ic{font-size:44px;line-height:1}
+  .camera b{display:block;font-size:20px;margin-top:6px;color:var(--acc)}
+  .camera small{color:var(--muted)}
+  .camera input,.filebtn input{display:none}
+  .filebtn{display:inline-flex;align-items:center;justify-content:center}
+  .como{counter-reset:c;list-style:none;padding:0;margin:0;display:grid;gap:8px}
+  .como li{counter-increment:c;display:flex;gap:10px;align-items:flex-start;font-size:15px}
+  .como li::before{content:counter(c);flex:none;width:26px;height:26px;border-radius:50%;background:var(--acc-soft);color:var(--acc);font-weight:700;display:grid;place-items:center;font-size:14px}
+  .fotos{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
+  .ft{position:relative}
+  .ft img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:10px;border:1px solid var(--line);display:block;cursor:zoom-in}
+  .ft .n{position:absolute;left:6px;top:6px;background:rgba(0,0,0,.65);color:#fff;font-size:12px;font-weight:700;border-radius:6px;padding:1px 6px}
+  .ft .x{position:absolute;right:4px;top:4px;width:32px;height:32px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:16px}
+  .ft .x::after,.strip .mais::after{content:'';position:absolute;inset:-6px}
+  .prog{height:10px;background:#eceae4;border-radius:99px;overflow:hidden;margin:10px 0 6px}
+  .prog i{display:block;height:100%;background:var(--acc);width:0;transition:width .3s}
+
+  /* Passo 3: conferir */
+  .resumo{display:flex;gap:10px;margin-bottom:14px}
+  .resumo div{flex:1;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+  .resumo b{display:block;font-size:22px}
+  .resumo span{font-size:13px;color:var(--muted)}
+  .al{background:#fff;border:1px solid var(--line);border-radius:var(--r);margin-bottom:10px;overflow:hidden}
+  .al-hd{width:100%;border:0;background:none;display:flex;align-items:center;gap:10px;padding:14px;text-align:left}
+  .al-hd .who{flex:1;min-width:0}
+  .al-hd .who b{display:block;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .al-hd .who small{color:var(--muted);font-size:13px}
+  .al-hd .nt{text-align:right;flex:none}
+  .al-hd .nt b{font-size:22px;display:block;line-height:1}
+  .al-hd .nt small{font-size:12px;color:var(--muted)}
+  .al-hd .seta{flex:none;color:var(--muted);transition:transform .2s}
+  .al.open .al-hd .seta{transform:rotate(90deg)}
+  .tag{display:inline-block;font-size:12px;font-weight:700;border-radius:99px;padding:3px 9px;margin-top:4px}
+  .tag.ok{background:var(--ok-soft);color:var(--ok)}
+  .tag.warn{background:var(--warn-soft);color:var(--warn)}
+  .tag.bad{background:var(--bad-soft);color:var(--bad)}
+  .al-body{display:none;border-top:1px solid var(--line);padding:14px}
+  .al.open .al-body{display:block;animation:desce .24s ease}
+  .sub{font-weight:700;font-size:15px;margin:16px 0 4px}
+  .strip{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+  .strip .ft{flex:0 0 84px}
+  .strip .mais{position:absolute;right:4px;bottom:4px;width:32px;height:32px;border-radius:50%;border:0;background:rgba(255,255,255,.95);box-shadow:0 1px 3px rgba(0,0,0,.3);font-weight:700}
+  .strip .ft.err img{border:2px solid var(--bad)}
+  .qrow{display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid #f0efea}
+  .qrow:last-child{border-bottom:0}
+  .qrow .res{flex:none;width:22px;text-align:center;font-weight:700}
+  .qrow .chip{min-width:clamp(38px,10.8vw,44px);height:44px;font-size:15px}
+  .qrow .chip.c-ok{background:var(--ok);border-color:var(--ok);color:#fff}
+  .qrow .chip.c-bad{background:var(--bad);border-color:var(--bad);color:#fff}
+  .qrow .chip.c-gab{border:2px dashed var(--ok);color:var(--ok)}
+  .abq{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px}
+  .abq.pend{border-color:#f2c374;background:#fffbf3}
+  .trans{white-space:pre-wrap;background:#faf9f6;border:1px solid var(--line);border-radius:8px;padding:10px;font-family:Georgia,serif;font-size:16px;margin:8px 0}
   .trans mark{background:#fde68a;border-radius:3px;padding:0 2px}
-  .trans .ileg{background:#fecaca}
-  .conf{font-size:12px;border-radius:99px;padding:2px 8px;font-weight:600}
-  .conf.alta{background:#dcfce7;color:#166534}.conf.media{background:#fef3c7;color:#92400e}.conf.baixa{background:#fee2e2;color:#991b1b}
-  .abq .nota{width:80px}
-  .ok-txt{color:var(--ok);font-weight:600}
-  .lote{display:flex;gap:8px;overflow-x:auto;padding:6px 0}
-  .lote .lt{position:relative;flex:0 0 72px}
-  .lote img{width:72px;height:92px;object-fit:cover;border-radius:6px;border:1px solid var(--line)}
-  .lote .lt span{position:absolute;left:4px;top:4px;background:rgba(0,0,0,.6);color:#fff;font-size:11px;border-radius:4px;padding:0 4px}
-  .lote .lt button{position:absolute;right:2px;top:2px;padding:0 6px;font-size:12px;line-height:18px}
-  .thumb .tb{display:flex;gap:4px}
-  .thumb .tb button{font-size:11px;padding:2px 6px}
-  .thumb.err img{border-color:var(--bad)}
-  .big{font-size:15px;padding:10px 16px}
-  label.filebtn{display:inline-block;border:1px solid var(--line);background:#fff;border-radius:7px;padding:7px 12px;cursor:pointer}
-  label.filebtn.primary{background:var(--acc);border-color:var(--acc);color:#fff}
-  label.filebtn input{display:none}
-  @media (max-width:640px){ main{padding:12px 10px 80px} header{padding:12px} .aluno .nome{min-width:0} .resp{grid-template-columns:1fr} }
-  #log{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;white-space:pre-wrap;max-height:260px;overflow:auto;background:#fbfaf7;border:1px solid var(--line);border-radius:6px;padding:10px;margin-top:10px}
-  #log:empty{display:none}
-  .warn{color:var(--warn)}
-  .muted{color:var(--muted)}
-  details summary{cursor:pointer;font-weight:600}
-  #modal{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:9;cursor:zoom-out}
-  #modal img{max-width:95vw;max-height:95vh}
-  .empty{color:var(--muted);text-align:center;padding:30px}
+  .trans mark.ileg{background:#fecaca}
+  .ia-c{font-size:14px;color:var(--muted)}
+  .nota-in{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .nota-in input{width:84px;text-align:center;font-weight:700}
+  .feito{color:var(--ok);font-weight:700}
+  .vazio{text-align:center;color:var(--muted);padding:36px 16px}
+  .vazio .ic{font-size:40px}
+
+  /* Passo 4: entregar */
+  .opcoes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .op{border:2px solid var(--line);border-radius:14px;background:#fff;padding:12px;text-align:left}
+  .op[aria-pressed=true]{border-color:var(--acc);background:var(--acc-soft)}
+  .op b{display:block;font-size:15px}
+  .op small{color:var(--muted);font-size:13px}
+  .mini{height:86px;border-radius:6px;background:#fff;border:1px solid #d8d5cd;margin-bottom:8px;padding:6px;display:grid;gap:3px}
+  .mini.c i{display:block;height:5px;background:#e2e0da;border-radius:2px}
+  .mini.c i:first-child{width:60%;height:8px;background:#9aa4b8}
+  .mini.r{grid-template-columns:1fr 1fr;gap:4px}
+  .mini.r i{border:1px dashed #b7b3a8;border-radius:3px}
+  .lista-ok{list-style:none;padding:0;margin:8px 0 0;display:grid;gap:4px;font-size:14px}
+
+  /* Folhas (menus que sobem) e foto ampliada */
+  .back{position:fixed;inset:0;background:rgba(15,20,30,.45);z-index:40;display:none}
+  .back.on{display:block;animation:aparece .2s ease}
+  .sheet{position:fixed;left:0;right:0;bottom:0;z-index:41;background:#fff;border-radius:20px 20px 0 0;max-height:88vh;overflow:auto;padding:8px 16px 16px;padding-bottom:max(16px,env(safe-area-inset-bottom));display:none;max-width:560px;margin:0 auto}
+  .sheet.on{display:block;animation:sobe .26s ease}
+  .sheet .grab{width:40px;height:5px;border-radius:9px;background:#d6d3cc;margin:4px auto 10px}
+  .sheet h3{font-size:19px;margin:0 0 6px}
+  .slist{display:grid;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:10px 0}
+  .slist button{border:0;border-bottom:1px solid var(--line);background:#fff;padding:14px;text-align:left;display:flex;gap:12px;align-items:center;min-height:56px}
+  .slist button:last-child{border-bottom:0}
+  .slist .ico{width:32px;height:32px;border-radius:8px;display:grid;place-items:center;color:#fff;flex:none;font-size:16px}
+  .slist .tx{flex:1}
+  .slist .tx small{display:block;color:var(--muted);font-size:13px}
+  .slist .tx small.falta{color:var(--warn)}
+  .slist .chev{color:var(--muted)}
+  .slist button.vermelho .tx{color:var(--bad);font-weight:600}
+  #zoom{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center}
+  #zoom.on{display:flex}
+  #zoom img{max-width:100vw;max-height:100vh}
+  #zoom button{position:absolute;top:max(12px,env(safe-area-inset-top));right:12px;width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,255,255,.9);font-size:20px}
+  .toast{position:fixed;left:0;right:0;margin:0 auto;width:max-content;max-width:calc(100vw - 32px);bottom:calc(var(--bar) + 20px);background:#16202e;color:#fff;padding:8px 8px 8px 16px;border-radius:12px;z-index:39;font-size:14px;display:none;align-items:center;gap:8px}
+  .toast.on{display:flex}
+  .toast button{border:0;background:none;color:#9db5ff;font-weight:700;min-height:44px;padding:0 10px}
+  .toast.on{animation:sobe .22s ease}
+
+  .entra-dir{animation:dir .26s ease}
+  .entra-esq{animation:esq .26s ease}
+  @keyframes dir{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+  @keyframes esq{from{opacity:0;transform:translateX(-24px)}to{opacity:1;transform:none}}
+  @keyframes sobe{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
+  @keyframes desce{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+  @keyframes aparece{from{opacity:0}to{opacity:1}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  @media (min-width:700px){ .qcols{display:grid;grid-template-columns:1fr 1fr;column-gap:24px} }
 </style>
 </head>
 <body>
+
 <header>
-  <h1>Corretor de Provas</h1>
-  <span class="sub">Pasta de origem → correção → pasta de destino com ficheiros renomeados + Excel de notas</span>
+  <div class="hrow">
+    <div class="htit"><h1 id="titulo">Gabarito</h1><small id="subtitulo">Corretor de Provas</small></div>
+    <button class="gear" id="abrirAjustes" aria-label="Ajustes" title="Ajustes">⚙️</button>
+  </div>
+  <nav class="steps" aria-label="Etapas">
+    <button data-go="1"><b>1</b>Gabarito</button>
+    <button data-go="2"><b>2</b>Fotos</button>
+    <button data-go="3"><b>3</b>Conferir</button>
+    <button data-go="4"><b>4</b>Entregar</button>
+  </nav>
 </header>
 
 <main>
-  <section class="card">
-    <details>
-      <summary>Como usar</summary>
-      <ol class="muted">
-        <li>Confira o gabarito e o valor de cada questão (fica guardado neste navegador).</li>
-        <li><b>No telemóvel:</b> toque em <b>Tirar foto</b> para cada página, em sequência, aluno a aluno. Ou escolha fotos já tiradas da galeria.</li>
-        <li><b>No computador:</b> escolha uma pasta com as fotos em sequência, ou com uma subpasta por aluno.</li>
-        <li>Toque em <b>Ler e separar por aluno</b>. A IA encontra a primeira página de cada aluno, lê o nome e as respostas. Revise: pode separar ou juntar alunos se a IA se enganar.</li>
-        <li>Toque em <b>Processar</b>. No computador, com pasta de destino, grava uma pasta por aluno e o Excel. Sem pasta de destino (ou no telemóvel), descarrega tudo num ZIP.</li>
-      </ol>
-    </details>
-  </section>
-
-  <section class="card">
-    <h2>1. Prova e gabarito</h2>
-    <div class="row" style="margin-bottom:12px">
-      <label>Código da prova <input id="prova" size="10"></label>
-      <label>Nº de questões <input id="nq" type="number" min="1" max="200" style="width:70px"></label>
-      <button id="resetKey">Repor gabarito M0504</button>
-    </div>
-    <div class="row" style="margin-bottom:12px">
-      <span>Questões de</span><input id="ra" type="number" min="1" style="width:60px">
-      <span>a</span><input id="rb" type="number" min="1" style="width:60px">
-      <span>valem</span><input id="rp" type="number" min="0" step="0.05" style="width:70px"><span>pontos cada</span>
-      <button id="applyRange">Aplicar</button>
-      <button id="dist10">Distribuir 10 pontos igualmente</button>
-    </div>
-    <div id="key" class="keygrid kgrid2"></div>
-    <p style="margin:10px 0 0"><b id="totPts"></b> <span class="muted">Cada questão: gabarito (letra ou "Aberta") e valor em pontos. Questões sem gabarito (—) não entram na nota.</span></p>
-    <div id="abCfg" class="abcfg"></div>
-  </section>
-
-  <section class="card">
-    <h2>2. Fotos das provas</h2>
-    <div class="row" style="margin-bottom:8px">
-      <label class="filebtn primary big">📷 Tirar foto<input id="cam" type="file" accept="image/*" capture="environment"></label>
-      <label class="filebtn big">Escolher fotos<input id="gal" type="file" accept="image/*" multiple></label>
-      <button id="pickSrc" class="fsonly">Escolher pasta de origem</button>
-      <span id="srcPath" class="path fsonly">nenhuma</span>
-    </div>
-    <p class="muted" style="margin:4px 0">Fotografe as provas em sequência: a primeira página de cada aluno (com o nome) e as seguintes, depois a primeira página do próximo aluno, e assim por diante. A ferramenta separa por aluno.</p>
-    <div id="loteBox" style="display:none">
-      <div class="row" style="justify-content:space-between">
-        <b id="loteInfo"></b>
-        <span class="row"><button id="loteClear">Limpar fotos</button><button id="loteGo" class="primary">Ler e separar por aluno</button></span>
+  <!-- PASSO 1 -->
+  <section class="step" id="p1">
+    <div class="card">
+      <label class="field"><span>Nome da prova</span>
+        <input type="text" id="prova" placeholder="Ex.: Matemática 5º ano, prova 2" autocomplete="off"></label>
+      <div class="field"><span>Quantas questões tem a prova?</span>
+        <div class="stepper"><button id="nMenos" aria-label="Menos uma questão">−</button><input id="nq" type="number" min="1" max="100" inputmode="numeric" aria-label="Número de questões"><button id="nMais" aria-label="Mais uma questão">+</button></div>
       </div>
-      <div id="lote" class="lote"></div>
-      <div id="loteSt" class="ast"></div>
+      <div class="field" style="margin-bottom:0"><span>Pontuação</span>
+        <div class="seg" role="group" aria-label="Como pontuar">
+          <button id="modoIgual" aria-pressed="true">Mesmo valor para todas</button>
+          <button id="modoManual" aria-pressed="false">Valor diferente por questão</button>
+        </div>
+        <div id="totalBox" class="row" style="margin-top:8px">
+          <span>A prova vale</span><input id="total" type="number" min="1" step="0.5" inputmode="decimal" style="width:90px"><span>pontos</span>
+        </div>
+        <small class="help" id="cadaVale" style="margin:4px 0 0"></small>
+      </div>
     </div>
-    <div class="row fsonly" style="margin-top:10px">
-      <button id="pickDst">Escolher pasta de destino</button>
-      <span id="dstPath" class="path">nenhuma (o resultado é descarregado em ZIP)</span>
+    <div class="card">
+      <h2>Respostas certas</h2>
+      <p class="help">Toque na letra certa de cada questão. Se for uma questão para o aluno escrever, toque em "Aberta" e diga o que a resposta precisa ter.</p>
+      <p class="aviso" id="avisoGab"></p>
+      <div class="klist" id="klist"></div>
     </div>
   </section>
 
-  <section class="card" id="iaCard">
-    <h2>Código de acesso</h2>
-    <div class="row">
-      <label>Código <input id="codigo" type="password" size="24" placeholder="fornecido pelo administrador"></label>
-      <label><input id="remember" type="checkbox"> lembrar neste navegador</label>
+  <!-- PASSO 2 -->
+  <section class="step" id="p2">
+    <label class="camera" id="camLabel">
+      <span class="ic" aria-hidden="true">📷</span>
+      <b>Tirar foto</b>
+      <small>Uma foto por página</small>
+      <input id="cam" type="file" accept="image/*" capture="environment">
+    </label>
+    <div class="row" style="justify-content:center;margin:10px 0 16px">
+      <label class="btn filebtn">🖼️ Escolher da galeria<input id="gal" type="file" accept="image/*" multiple></label>
+      <button class="btn fsonly" id="pastaSrc">💻 Pasta do computador</button>
     </div>
-    <p class="muted" style="margin:8px 0 0">Com o código preenchido, as provas são lidas automaticamente assim que escolhe a pasta de origem. Revise sempre antes de processar.</p>
+    <div class="card" id="comoCard">
+      <h2>Como fotografar</h2>
+      <ol class="como">
+        <li>Comece pela primeira página do primeiro aluno, aquela com o nome.</li>
+        <li>Depois fotografe as outras páginas desse aluno, em ordem.</li>
+        <li>Passe para o próximo aluno e repita. O sistema separa cada aluno sozinho.</li>
+      </ol>
+    </div>
+    <div class="card" id="fotosCard" style="display:none">
+      <div class="row" style="justify-content:space-between;margin-bottom:10px">
+        <h2 id="fotosTit">Fotos</h2>
+        <button class="linkbtn" id="limparFotos">Apagar todas</button>
+      </div>
+      <div class="fotos" id="fotos"></div>
+      <div id="leitura" style="display:none">
+        <div class="prog"><i id="progBar"></i></div>
+        <p class="help" id="progTxt" style="margin:0"></p>
+      </div>
+    </div>
   </section>
 
-  <section>
-    <div class="row" style="justify-content:space-between;margin-bottom:10px">
-      <h2 style="font-size:15px;margin:0">3. Alunos <span id="resumo" class="muted"></span></h2>
-      <button id="iaAll">Ler todos com IA</button>
-    </div>
-    <div id="alunos"><div class="card empty">Tire ou escolha as fotos das provas para começar.</div></div>
+  <!-- PASSO 3 -->
+  <section class="step" id="p3">
+    <div id="conferir"></div>
   </section>
 
-  <section class="card">
-    <h2>4. Processar</h2>
-    <div class="row">
-      <button id="go" class="primary big" disabled>Processar e gerar Excel</button>
-      <span id="goHint" class="muted">Copia as fotos renomeadas (os originais não são alterados).</span>
+  <!-- PASSO 4 -->
+  <section class="step" id="p4">
+    <p class="aviso" id="avisoEntrega"></p>
+    <div class="card">
+      <h2>Relatório para cada aluno</h2>
+      <p class="help">Escolha o modelo para imprimir.</p>
+      <div class="opcoes">
+        <button class="op" id="opCompleto" aria-pressed="true">
+          <div class="mini c" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <b>Folha completa</b><small>Uma folha por aluno, com todas as questões e espaço para assinatura</small>
+        </button>
+        <button class="op" id="opResumo" aria-pressed="false">
+          <div class="mini r" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+          <b>Fichas para grampear</b><small>4 por folha, com a nota e o que rever. Recorte e grampeie na prova</small>
+        </button>
+      </div>
     </div>
-    <div class="row" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">
-      <label>Relatório por aluno
-        <select id="relTipo">
-          <option value="completo">Completo: 1 folha por aluno</option>
-          <option value="resumo">Resumo para anexar: 4 por folha</option>
-        </select>
-      </label>
-      <button id="relPrint" class="big">🖨 Imprimir relatórios</button>
+    <div class="card">
+      <h2>Guardar tudo</h2>
+      <p class="help" id="guardarHelp">Baixa um arquivo ZIP com uma pasta por aluno (fotos com nome), a planilha de notas e os relatórios.</p>
+      <button class="btn full" id="guardar">⬇️ Baixar fotos, planilha e relatórios</button>
+      <ul class="lista-ok" id="guardarLog"></ul>
     </div>
-    <p class="muted" style="margin:6px 0 0">O relatório também vai dentro do ZIP ou da pasta de destino, para imprimir mais tarde.</p>
-    <div id="log"></div>
   </section>
 </main>
 
-<div id="modal"><img alt=""></div>
+<div class="bar">
+  <p class="note" id="barNote"></p>
+  <div class="in">
+    <button class="btn ghost" id="voltar">‹ Voltar</button>
+    <button class="btn pri" id="principal">Continuar</button>
+  </div>
+</div>
+
+<!-- Folhas -->
+<div class="back" id="back"></div>
+
+<div class="sheet" id="shAjustes" role="dialog" aria-modal="true" aria-labelledby="ajTit">
+  <div class="grab"></div><h3 id="ajTit">Ajustes</h3>
+  <div class="slist">
+    <button id="ajCodigo"><span class="ico" style="background:#2457f5">🔑</span><span class="tx">Código de acesso<small id="ajCodigoEst"></small></span><span class="chev">›</span></button>
+    <button id="ajDestino" class="fsonly"><span class="ico" style="background:#0f766e">💻</span><span class="tx">Salvar em uma pasta do computador<small id="ajDestinoEst">Não escolhida, o resultado é baixado em ZIP</small></span><span class="chev">›</span></button>
+    <button id="ajAjuda"><span class="ico" style="background:#7c3aed">?</span><span class="tx">Como funciona<small>O passo a passo em 4 etapas</small></span><span class="chev">›</span></button>
+    <button id="ajExemplo"><span class="ico" style="background:#64748b">📄</span><span class="tx">Carregar gabarito de exemplo<small>Prova M0504, de matemática</small></span><span class="chev">›</span></button>
+  </div>
+  <div class="slist">
+    <button id="ajNova" class="vermelho"><span class="ico" style="background:#c02626">↺</span><span class="tx">Começar uma correção nova</span></button>
+  </div>
+</div>
+
+<div class="sheet" id="shCodigo" role="dialog" aria-modal="true" aria-labelledby="cdTit">
+  <div class="grab"></div><h3 id="cdTit">Código de acesso</h3>
+  <p class="help">Com o código, o sistema lê as provas sozinho. Quem configurou o sistema para você passa este código.</p>
+  <label class="field"><span>Código</span><input type="password" id="codigo" autocomplete="off"></label>
+  <button class="btn pri full" id="cdSalvar">Salvar</button>
+  <button class="btn ghost full" id="cdSem" style="margin-top:6px">Agora não, vou corrigir à mão</button>
+</div>
+
+<div class="sheet" id="shAjuda" role="dialog" aria-modal="true" aria-labelledby="ahTit">
+  <div class="grab"></div><h3 id="ahTit">Como funciona</h3>
+  <ol class="como" style="margin:10px 0 16px">
+    <li><b>Gabarito.</b> Diga quantas questões a prova tem e qual é a resposta certa de cada uma. Fica salvo para as próximas turmas.</li>
+    <li><b>Fotos.</b> Fotografe as provas em sequência, aluno por aluno, começando pela página com o nome.</li>
+    <li><b>Conferir.</b> O sistema lê as respostas e separa os alunos. Você confere o que estiver marcado em laranja.</li>
+    <li><b>Entregar.</b> Imprima os relatórios e baixe as fotos e a planilha de notas.</li>
+  </ol>
+  <button class="btn pri full" data-fechar>Entendi</button>
+</div>
+
+<div class="sheet" id="shConfirma" role="alertdialog" aria-modal="true" aria-labelledby="cfTit">
+  <div class="grab"></div><h3 id="cfTit"></h3>
+  <p class="help" id="cfTxt"></p>
+  <button class="btn full" id="cfSim" style="background:var(--bad);border-color:var(--bad);color:#fff"></button>
+  <button class="btn ghost full" data-fechar style="margin-top:6px">Cancelar</button>
+</div>
+
+<div class="sheet" id="shFoto" role="dialog" aria-modal="true" aria-labelledby="sfTit">
+  <div class="grab"></div><h3 id="sfTit"></h3>
+  <div class="slist" id="sfLista"></div>
+  <button class="btn ghost full" data-fechar>Fechar</button>
+</div>
+
+<div id="zoom" role="dialog" aria-modal="true" aria-label="Foto ampliada"><img alt=""><button aria-label="Fechar foto">✕</button></div>
+<div class="toast" id="toast" role="status"></div>
 
 <script>
+/* ================= Estado ================= */
 const $ = s => document.querySelector(s);
-const IMG_RE = /\.(jpe?g|png|webp|gif|bmp)$/i;
+const IMG_RE = /\.(jpe?g|png|webp|gif|bmp|heic)$/i;
 const LETRAS = ['A','B','C','D'];
-const DEFAULT = { prova:'M0504', n:22, peso:{},
-  key:{1:'B',2:'C',3:'D',4:'A',5:'D',6:'A',7:'C',8:'B',9:'A',10:'B',11:'D',12:'A',20:'B',21:'B',22:'C'} };
-const S = { prova:'', n:0, key:{}, peso:{}, crit:{}, src:null, dst:null, alunos:[] };
 const ABERTA = 'AB';
-const isAb = q => S.key[q]===ABERTA;
-const peso = q => (S.peso[q] ?? 1);
-const r2 = n => Math.round(n*100)/100;
-let nextId = 1;
+const HAS_FS = !!window.showDirectoryPicker;
+const EXEMPLO = { prova:'M0504', n:22, modo:'igual', total:10, peso:{}, crit:{},
+  key:{1:'B',2:'C',3:'D',4:'A',5:'D',6:'A',7:'C',8:'B',9:'A',10:'B',11:'D',12:'A',20:'B',21:'B',22:'C'} };
+const S = { prova:'', n:10, modo:'igual', total:10, key:{}, peso:{}, crit:{}, codigo:'',
+  step:1, lote:[], alunos:[], aberto:null, dst:null, relTipo:'completo', lendo:false };
+let nextId=1, fotoN=0;
 
 const pad = n => String(n).padStart(2,'0');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const fmt = n => n.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:2});
+const fmt = n => (Math.round(n*100)/100).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:2});
+const r2 = n => Math.round(n*100)/100;
+const pl = (n, um, varios) => `${n} ${n===1?um:varios}`;
+const contagem = sc => [pl(sc.corr,'certa','certas'), sc.parc?pl(sc.parc,'parcial','parciais'):'', pl(sc.err,'errada','erradas'), pl(sc.br,'em branco','em branco')].filter(Boolean).join(', ');
 const safe = s => String(s).normalize('NFC').replace(/[\\/:*?"<>|]/g,'').trim().replace(/\s+/g,'_');
-const log = (msg, cls) => { const d=document.createElement('div'); if(cls) d.className=cls; d.textContent=msg; $('#log').appendChild(d); $('#log').scrollTop=1e9; };
+const num = v => { const x=parseFloat(String(v).replace(',','.')); return isNaN(x) ? null : x; };
+const isAb = q => S.key[q]===ABERTA;
+const chaves = () => { const a=[]; for(let q=1;q<=S.n;q++) if(S.key[q]) a.push(q); return a; };
+const peso = q => S.modo==='manual' ? (S.peso[q] ?? 1) : (chaves().length ? S.total/chaves().length : 0);
 
-/* ---------- configuração ---------- */
-function loadCfg(){
-  let c=null; try{ c=JSON.parse(localStorage.getItem('corretor_cfg')||'null'); }catch(e){}
-  const src = c || DEFAULT;
-  S.prova=src.prova; S.n=src.n; S.key={...src.key}; S.peso={...(src.peso||{})}; S.crit={...(src.crit||{})};
-  try{ const k=localStorage.getItem('corretor_codigo'); if(k){ $('#codigo').value=k; $('#remember').checked=true; } }catch(e){}
+function toast(msg, acao){
+  const t=$('#toast'); t.innerHTML=''; const sp=document.createElement('span'); sp.textContent=msg; t.appendChild(sp);
+  if(acao){ const b=document.createElement('button'); b.textContent=acao.texto; b.onclick=()=>{ t.classList.remove('on'); acao.fn(); }; t.appendChild(b); }
+  t.classList.add('on'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('on'), acao?6000:3200);
 }
-function saveCfg(){ try{ localStorage.setItem('corretor_cfg', JSON.stringify({prova:S.prova,n:S.n,key:S.key,peso:S.peso,crit:S.crit})); }catch(e){} }
 
-function renderKey(){
-  $('#prova').value=S.prova; $('#nq').value=S.n;
-  const box=$('#key'); box.innerHTML='';
-  for(let q=1;q<=S.n;q++){
-    const lab=document.createElement('label'); lab.className='kcell';
-    lab.innerHTML=`<span>Q${pad(q)}</span>`;
-    const sel=document.createElement('select');
-    ['',...LETRAS,ABERTA].forEach(o=>{ const op=document.createElement('option'); op.value=o; op.textContent= o===ABERTA ? 'Aberta' : (o||'—'); if((S.key[q]||'')===o) op.selected=true; sel.appendChild(op); });
-    sel.onchange=()=>{ if(sel.value) S.key[q]=sel.value; else delete S.key[q]; saveCfg(); renderAbCfg(); totPts(); renderAlunos(); };
-    const pi=document.createElement('input'); pi.type='number'; pi.min='0'; pi.step='0.05'; pi.title='Valor em pontos'; pi.value=peso(q);
-    pi.onchange=()=>{ const v=parseFloat(String(pi.value).replace(',','.')); S.peso[q]= isNaN(v)||v<0 ? 1 : v; saveCfg(); totPts(); renderAlunos(); };
-    lab.appendChild(sel); lab.appendChild(pi); lab.appendChild(Object.assign(document.createElement('small'),{className:'muted',textContent:'pts'}));
-    box.appendChild(lab);
-  }
-  totPts(); renderAbCfg();
+/* ================= Gravar no navegador ================= */
+function carregar(){
+  let c=null; try{ c=JSON.parse(localStorage.getItem('corretor_v2')||'null'); }catch(e){}
+  if(c) Object.assign(S, { prova:c.prova||'', n:c.n||10, modo:c.modo||'igual', total:c.total||10, key:c.key||{}, peso:c.peso||{}, crit:c.crit||{} });
+  try{ S.codigo=localStorage.getItem('corretor_codigo')||''; }catch(e){}
 }
-function renderAbCfg(){
-  const box=$('#abCfg'); box.innerHTML='';
-  for(let q=1;q<=S.n;q++){
-    if(!isAb(q)) continue;
-    const lab=document.createElement('label');
-    lab.innerHTML=`<span><b>Q${pad(q)}</b> · questão aberta · vale ${fmt(peso(q))} pts</span>`;
-    const ta=document.createElement('textarea');
-    ta.placeholder='Resposta esperada e critérios com pontos. Ex.: Cita a causa da chuva (0,5). Dá um exemplo do dia a dia (0,5). Não descontar ortografia.';
-    ta.value=S.crit[q]||'';
-    ta.oninput=()=>{ S.crit[q]=ta.value; saveCfg(); };
-    lab.appendChild(ta); box.appendChild(lab);
-  }
-}
-function totPts(){
-  let t=0, n=0; for(let q=1;q<=S.n;q++) if(S.key[q]){ t+=peso(q); n++; }
-  $('#totPts').textContent=`Total da prova: ${fmt(r2(t))} pontos em ${n} questões.`;
-}
-$('#applyRange').onclick=()=>{
-  const a=parseInt($('#ra').value,10), b=parseInt($('#rb').value,10), p=parseFloat(String($('#rp').value).replace(',','.'));
-  if(!(a>=1 && b>=a && p>=0)) return;
-  for(let q=a;q<=Math.min(b,S.n);q++) S.peso[q]=p;
-  saveCfg(); renderKey(); renderAlunos();
+function salvar(){ try{ localStorage.setItem('corretor_v2', JSON.stringify({prova:S.prova,n:S.n,modo:S.modo,total:S.total,key:S.key,peso:S.peso,crit:S.crit})); }catch(e){} }
+function salvarCodigo(){ try{ if(S.codigo) localStorage.setItem('corretor_codigo',S.codigo); else localStorage.removeItem('corretor_codigo'); }catch(e){} }
+
+/* ================= Guardar a correção no aparelho (sobrevive a recarregar) ================= */
+const DB={
+  abrir(){ return new Promise((ok,ko)=>{ const r=indexedDB.open('corretor',1); r.onupgradeneeded=()=>r.result.createObjectStore('s'); r.onsuccess=()=>ok(r.result); r.onerror=()=>ko(r.error); }); },
+  async op(modo,fn){ const db=await this.abrir(); return new Promise((ok,ko)=>{ const t=db.transaction('s',modo); const r=fn(t.objectStore('s')); t.oncomplete=()=>ok(r&&r.result); t.onerror=()=>ko(t.error); }); },
+  put(v){ return this.op('readwrite',st=>st.put(v,'sessao')); },
+  get(){ return this.op('readonly',st=>st.get('sessao')); },
+  del(){ return this.op('readwrite',st=>st.delete('sessao')); }
 };
-$('#dist10').onclick=()=>{
-  const qs=[]; for(let q=1;q<=S.n;q++) if(S.key[q]) qs.push(q);
-  if(!qs.length) return;
-  const v=Math.round(10/qs.length*100)/100;
-  qs.forEach(q=>S.peso[q]=v); saveCfg(); renderKey(); renderAlunos();
-};
-$('#prova').oninput=e=>{ S.prova=e.target.value.trim(); saveCfg(); };
-$('#nq').onchange=e=>{ const v=parseInt(e.target.value,10); if(v>0){ S.n=v; Object.keys(S.key).forEach(k=>{ if(+k>v) delete S.key[k]; }); saveCfg(); renderKey(); renderAlunos(); } };
-$('#resetKey').onclick=()=>{ S.prova=DEFAULT.prova; S.n=DEFAULT.n; S.key={...DEFAULT.key}; S.peso={...DEFAULT.peso}; S.crit={}; saveCfg(); renderKey(); renderAlunos(); };
-$('#remember').onchange=()=>{ try{ if($('#remember').checked) localStorage.setItem('corretor_codigo',$('#codigo').value); else localStorage.removeItem('corretor_codigo'); }catch(e){} };
-$('#codigo').oninput=()=>{ if($('#remember').checked){ try{ localStorage.setItem('corretor_codigo',$('#codigo').value); }catch(e){} } };
-
-/* ---------- pastas ---------- */
-const HAS_FS = !!window.showDirectoryPicker;
-S.lote = [];
-function needFS(){
-  if(!window.showDirectoryPicker){ alertBox('Este navegador não permite escolher pastas. Abra o ficheiro no Chrome ou Edge de computador.'); return false; }
+function serializar(){
+  const im=i=>({name:i.name, file:i.file, q:i.q||'', j:i.j||null, erro:!!i.erro, nomeIA:i.nomeIA||null});
+  return { v:1, fotoN, nextId, lote:S.lote.map(im), alunos:S.alunos.map(a=>({id:a.id, nome:a.nome, resp:a.resp, ab:a.ab, manual:a.manual, dica:!!a.dica, imgs:a.imgs.map(im)})) };
+}
+let tSessao=null;
+function guardarSessao(){
+  clearTimeout(tSessao);
+  tSessao=setTimeout(()=>{ if(!window.indexedDB) return; (S.lote.length||S.alunos.length ? DB.put(serializar()) : DB.del()).catch(()=>{}); },500);
+}
+async function restaurarSessao(){
+  if(!window.indexedDB) return false;
+  let d=null; try{ d=await DB.get(); }catch(e){ return false; }
+  if(!d || (!d.lote?.length && !d.alunos?.length)) return false;
+  const im=i=>({ name:i.name, file:i.file, url:URL.createObjectURL(i.file), q:i.q, j:i.j, erro:i.erro, nomeIA:i.nomeIA });
+  fotoN=d.fotoN||0; nextId=d.nextId||1;
+  S.lote=(d.lote||[]).map(im);
+  S.alunos=(d.alunos||[]).map(a=>({...a, manual:a.manual||{resp:{},ab:{}}, imgs:a.imgs.map(im)}));
   return true;
 }
-function alertBox(msg){ $('#log').innerHTML=''; log(msg,'warn'); $('#log').scrollIntoView({behavior:'smooth'}); }
 
-async function mkImg(h){ const file=await h.getFile(); return mkImgFile(file); }
-function mkImgFile(file, name){ return { name:name||file.name, file, url:URL.createObjectURL(file), q:'' }; }
-let fotoN=0;
-
-/* ---------- lote de fotos em sequência ---------- */
-function renderLote(){
-  const box=$('#lote'); box.innerHTML='';
-  $('#loteBox').style.display = S.lote.length ? '' : 'none';
-  $('#loteInfo').textContent = `${S.lote.length} foto(s) por separar`;
-  S.lote.forEach((img,i)=>{
-    const d=document.createElement('div'); d.className='lt';
-    d.innerHTML=`<img src="${img.url}" alt=""><span>${i+1}</span><button title="Remover">×</button>`;
-    d.querySelector('img').onclick=()=>{ $('#modal img').src=img.url; $('#modal').style.display='flex'; };
-    d.querySelector('button').onclick=()=>{ URL.revokeObjectURL(img.url); S.lote.splice(i,1); renderLote(); };
-    box.appendChild(d);
+/* ================= Navegação ================= */
+const TITULOS={1:'Gabarito',2:'Fotos',3:'Conferir',4:'Entregar'};
+function ir(n){
+  const antes=S.step; S.step=n;
+  document.querySelectorAll('.step').forEach(s=>s.classList.remove('on','entra-dir','entra-esq'));
+  const el=$('#p'+n); el.classList.add('on');
+  if(antes!==n) el.classList.add(n>antes?'entra-dir':'entra-esq');
+  $('#titulo').textContent=TITULOS[n];
+  document.querySelectorAll('.steps button').forEach(b=>{
+    const k=+b.dataset.go, feita = k===1 ? chaves().length>0 : (k===2 || k===3) ? S.alunos.length>0 : false;
+    b.classList.toggle('on',k===n); b.classList.toggle('feito',k!==n && feita);
+    if(k===n) b.setAttribute('aria-current','step'); else b.removeAttribute('aria-current');
   });
-  box.scrollLeft=1e9;
+  if(n===1) renderGabarito();
+  if(n===2) renderFotos();
+  if(n===3) renderConferir();
+  if(n===4) renderEntregar();
+  barra(); window.scrollTo(0,0);
 }
-function addFotos(files){
-  for(const f of files){
-    if(!f || !/^image\//.test(f.type||'') && !IMG_RE.test(f.name||'')) continue;
-    fotoN++;
-    const ext=(String(f.name||'').match(/\.[^.]+$/)||['.jpg'])[0];
-    S.lote.push(mkImgFile(f, `foto_${String(fotoN).padStart(3,'0')}${ext}`));
+document.querySelectorAll('.steps button').forEach(b=>b.onclick=()=>ir(+b.dataset.go));
+$('#voltar').onclick=()=>{ if(S.step>1) ir(S.step-1); };
+
+function barra(){
+  guardarSessao();
+  const p=$('#principal'), note=$('#barNote');
+  $('#voltar').style.visibility = S.step>1 ? 'visible' : 'hidden';
+  p.disabled=false; note.textContent='';
+  $('#subtitulo').textContent = S.prova ? `Corretor de Provas · ${S.prova}` : 'Corretor de Provas';
+  if(S.step===1){
+    const k=chaves().length;
+    p.textContent='Continuar para as fotos';
+    p.disabled = !k;
+    note.textContent = k ? `${k} de ${S.n} ${S.n>1?'questões':'questão'} com resposta certa` : 'Marque a resposta certa de pelo menos uma questão';
+  } else if(S.step===2){
+    if(S.lendo){ p.textContent='Lendo as provas…'; p.disabled=true; }
+    else if(S.lote.length){
+      p.textContent = S.codigo ? `Ler e separar ${S.lote.length} foto${S.lote.length>1?'s':''}` : 'Continuar sem leitura automática';
+      if(!S.codigo) note.textContent='Sem código de acesso: você marca as respostas à mão.';
+    } else if(S.alunos.length){ p.textContent='Continuar para conferir'; }
+    else { p.textContent='Tire as fotos para continuar'; p.disabled=true; }
+  } else if(S.step===3){
+    p.textContent='Continuar para entregar';
+    p.disabled = !S.alunos.length;
+    const at=S.alunos.filter(a=>atencao(a).total).length;
+    if(at) note.textContent = `${at} aluno${at>1?'s':''} com itens para conferir`;
+  } else {
+    p.textContent='🖨️ Imprimir relatórios';
+    p.disabled = !S.alunos.length;
   }
-  renderLote();
+}
+$('#principal').onclick=()=>{
+  if(S.step===1) ir(2);
+  else if(S.step===2){
+    if(S.lote.length){ S.codigo ? separarLote() : semLeitura(); }
+    else ir(3);
+  }
+  else if(S.step===3) ir(4);
+  else imprimir();
+};
+
+/* ================= Folhas ================= */
+let folhaAberta=null;
+let focoAntes=null;
+function abrir(id){ const ant=document.activeElement; fecharFolha(true); focoAntes=ant; $('#toast').classList.remove('on'); folhaAberta=$(id); $('#back').classList.add('on'); folhaAberta.classList.add('on'); const f=folhaAberta.querySelector('input,button'); if(f) setTimeout(()=>f.focus(),50); }
+function fecharFolha(silencioso){
+  const havia=!!folhaAberta; if(folhaAberta) folhaAberta.classList.remove('on'); folhaAberta=null; $('#back').classList.remove('on');
+  if(havia && !silencioso && focoAntes && document.contains(focoAntes)) try{ focoAntes.focus(); }catch(e){}
+}
+$('#back').onclick=()=>fecharFolha();
+document.querySelectorAll('[data-fechar]').forEach(b=>b.onclick=()=>fecharFolha());
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ if($('#zoom').classList.contains('on')) fecharZoom(); else fecharFolha(); } });
+function confirmar(titulo, texto, botao, acao){
+  $('#cfTit').textContent=titulo; $('#cfTxt').textContent=texto; $('#cfSim').textContent=botao;
+  $('#cfSim').onclick=()=>{ fecharFolha(); acao(); };
+  abrir('#shConfirma');
+}
+function zoom(url){ $('#zoom img').src=url; $('#zoom').classList.add('on'); $('#zoom button').focus(); }
+function fecharZoom(){ $('#zoom').classList.remove('on'); }
+$('#zoom').onclick=fecharZoom;
+
+$('#abrirAjustes').onclick=()=>{ estadoAjustes(); abrir('#shAjustes'); };
+function estadoAjustes(){
+  const e=$('#ajCodigoEst'); e.textContent = S.codigo ? 'Configurado, a leitura é automática' : 'Falta configurar, a leitura é à mão'; e.className = S.codigo ? '' : 'falta';
+  $('#ajDestinoEst').textContent = S.dst ? `Pasta: ${S.dst.name}` : 'Não escolhida, o resultado é baixado em ZIP';
+}
+$('#ajCodigo').onclick=()=>{ $('#codigo').value=S.codigo; abrir('#shCodigo'); };
+$('#cdSalvar').onclick=()=>{ S.codigo=$('#codigo').value.trim(); salvarCodigo(); fecharFolha(); toast(S.codigo?'Código salvo.':'Código removido.'); barra(); };
+$('#cdSem').onclick=()=>{ try{ localStorage.setItem('corretor_semcodigo','1'); }catch(e){} fecharFolha(); };
+$('#ajAjuda').onclick=()=>abrir('#shAjuda');
+$('#ajExemplo').onclick=()=>{
+  const fazer=()=>{ Object.assign(S, JSON.parse(JSON.stringify(EXEMPLO))); salvar(); fecharFolha(); ir(1); toast('Gabarito de exemplo carregado.'); };
+  if(chaves().length) confirmar('Trocar o gabarito?','O gabarito atual será substituído pelo de exemplo.','Trocar gabarito',fazer); else fazer();
+};
+$('#ajNova').onclick=()=>confirmar('Começar uma correção nova?','Apaga as fotos e as notas desta correção. O gabarito continua salvo. Baixe ou imprima antes o que precisar.','Apagar e começar de novo',()=>{
+  S.lote.forEach(i=>URL.revokeObjectURL(i.url)); S.alunos.forEach(a=>a.imgs.forEach(i=>URL.revokeObjectURL(i.url)));
+  S.lote=[]; S.alunos=[]; S.aberto=null; $('#guardarLog').innerHTML=''; DB.del().catch(()=>{}); ir(2); toast('Pronto para uma correção nova.');
+});
+$('#ajDestino').onclick=async()=>{
+  try{ S.dst=await window.showDirectoryPicker({mode:'readwrite'}); }catch(e){ return; }
+  estadoAjustes(); renderEntregar(); toast(`Os arquivos serão salvos em "${S.dst.name}".`);
+};
+
+/* ================= Passo 1: gabarito ================= */
+$('#prova').oninput=e=>{ S.prova=e.target.value; salvar(); barra(); };
+function mudarN(v){
+  v=Math.max(1,Math.min(100,v|0)); S.n=v;
+  // as respostas acima de n ficam guardadas: se ela voltar a aumentar, reaparecem
+  salvar(); renderGabarito(); barra();
+}
+$('#nMenos').onclick=()=>mudarN(S.n-1);
+$('#nMais').onclick=()=>mudarN(S.n+1);
+$('#nq').onchange=e=>mudarN(parseInt(e.target.value,10)||1);
+$('#modoIgual').onclick=()=>{ S.modo='igual'; salvar(); renderGabarito(); };
+$('#modoManual').onclick=()=>{
+  if(S.modo!=='manual'){ const v=r2(peso(chaves()[0]||1)||1); chaves().forEach(q=>{ if(S.peso[q]==null) S.peso[q]=v; }); }
+  S.modo='manual'; salvar(); renderGabarito();
+};
+$('#total').onchange=e=>{ const v=num(e.target.value); if(v>0){ S.total=v; salvar(); } renderGabarito(); };
+
+function somaPontos(){ return r2(chaves().reduce((t,q)=>t+peso(q),0)); }
+function infoPontos(){
+  const k=chaves().length;
+  if(S.modo==='igual') $('#cadaVale').textContent = k ? `Cada questão vale ${fmt(S.total/k)} ponto${S.total/k===1?'':'s'}.` : '';
+  else $('#cadaVale').innerHTML = `Total da prova: <span class="tot">${fmt(somaPontos())} pontos</span>. Escreva o valor ao lado de cada questão.`;
+  const sem=[]; for(let q=1;q<=S.n;q++) if(!S.key[q]) sem.push(q);
+  $('#avisoGab').textContent = (k && sem.length) ? `Sem resposta certa: ${intervalos(sem)}. Essas questões não contam na nota.` : '';
+}
+function intervalos(l){
+  const out=[]; let i=0;
+  while(i<l.length){ let j=i; while(j+1<l.length && l[j+1]===l[j]+1) j++; out.push(j>i+1 ? `${l[i]} a ${l[j]}` : (j===i+1 ? `${l[i]}, ${l[j]}` : `${l[i]}`)); i=j+1; }
+  return out.join(', ');
+}
+function renderGabarito(){
+  $('#prova').value=S.prova; $('#nq').value=S.n; $('#total').value=S.total;
+  $('#modoIgual').setAttribute('aria-pressed',S.modo==='igual'); $('#modoManual').setAttribute('aria-pressed',S.modo==='manual');
+  $('#totalBox').style.display = S.modo==='igual' ? '' : 'none';
+  const box=$('#klist'); box.innerHTML='';
+  for(let q=1;q<=S.n;q++) box.appendChild(linhaGab(q));
+  infoPontos(); barra();
+}
+function linhaGab(q){
+  const d=document.createElement('div'); d.className='krow'+(S.key[q]?'':' sem'); d.id='k'+q;
+  const k=S.key[q];
+  d.innerHTML=`<div class="kline"><span class="qn" aria-hidden="true">${q}</span>
+    <div class="chips" role="group" aria-label="Questão ${q}">${[...LETRAS,ABERTA].map(L=>`<button class="chip${L===ABERTA?' ab':''}" data-l="${L}" aria-pressed="${k===L}" aria-label="Questão ${q}, ${L===ABERTA?'aberta':'letra '+L}">${L===ABERTA?'Aberta':L}</button>`).join('')}</div>
+    ${S.modo==='manual' && k ? `<label class="pts"><input type="number" min="0" step="0.25" inputmode="decimal" value="${peso(q)}" aria-label="Pontos da questão ${q}">pts</label>` : ''}</div>
+    ${k===ABERTA ? `<label class="kcrit field" style="margin:8px 0 0"><span style="font-size:14px">O que a resposta precisa ter para ganhar os pontos?</span><textarea placeholder="Ex.: Explica que a chuva vem da água que evapora (metade). Dá um exemplo do dia a dia (metade). Não descontar erros de ortografia.">${esc(S.crit[q]||'')}</textarea></label>` : ''}`;
+  d.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{
+    const L=b.dataset.l;
+    if(S.key[q]===L) delete S.key[q]; else S.key[q]=L;
+    if(S.modo==='manual' && S.key[q] && S.peso[q]==null) S.peso[q]=1;
+    salvar(); d.replaceWith(linhaGab(q)); infoPontos(); barra();
+    if(L===ABERTA && S.key[q]) setTimeout(()=>{ const t=document.querySelector('#k'+q+' textarea'); if(t) t.focus(); },30);
+  });
+  const pi=d.querySelector('.pts input'); if(pi) pi.onchange=()=>{ const v=num(pi.value); S.peso[q]= v==null||v<0 ? 1 : v; salvar(); infoPontos(); };
+  const ta=d.querySelector('textarea'); if(ta) ta.oninput=()=>{ S.crit[q]=ta.value; salvar(); };
+  return d;
+}
+
+/* ================= Passo 2: fotos ================= */
+function mkImg(file, nome){ return { name:nome||file.name, file, url:URL.createObjectURL(file), q:'' }; }
+function addFotos(files){
+  let n=0;
+  for(const f of files){
+    if(!f || !(/^image\//.test(f.type||'') || IMG_RE.test(f.name||''))) continue;
+    fotoN++; n++;
+    const ext=(String(f.name||'').match(/\.[^.]+$/)||['.jpg'])[0].toLowerCase();
+    const blob = f.slice(0, f.size, f.type || 'image/jpeg');
+    S.lote.push(mkImg(blob, `foto_${String(fotoN).padStart(3,'0')}${ext}`));
+  }
+  renderFotos(); barra();
+  if(n) toast(n===1 ? `Foto ${S.lote.length} guardada. Pode tirar a próxima.` : `${n} fotos adicionadas.`);
 }
 $('#cam').onchange=e=>{ addFotos([...e.target.files]); e.target.value=''; };
 $('#gal').onchange=e=>{ addFotos([...e.target.files].sort((a,b)=>(a.lastModified-b.lastModified)||a.name.localeCompare(b.name,undefined,{numeric:true}))); e.target.value=''; };
-$('#loteClear').onclick=()=>{ S.lote.forEach(i=>URL.revokeObjectURL(i.url)); S.lote=[]; renderLote(); };
-$('#loteGo').onclick=()=>separarLote();
-
-async function separarLote(){
-  const st=$('#loteSt');
-  const codigo=$('#codigo').value.trim();
-  if(!codigo){ st.className='ast warn'; st.textContent='Indique o código de acesso (mais abaixo) para a leitura automática.'; $('#codigo').scrollIntoView({behavior:'smooth'}); return; }
-  if(!S.lote.length) return;
-  const fotos=S.lote.slice(); const res=new Array(fotos.length); let feitas=0, falhas=0;
-  $('#loteGo').disabled=true; st.className='ast';
-  st.textContent=`A ler 0 de ${fotos.length} fotos…`;
-  let next=0;
-  async function worker(){
-    while(next<fotos.length){
-      const i=next++;
-      try{ res[i]=await lerFoto(fotos[i], codigo); }
-      catch(e){ res[i]={erro:e.message}; falhas++; if(/código/i.test(e.message)) next=fotos.length; }
-      feitas++; st.textContent=`A ler ${feitas} de ${fotos.length} fotos…`;
-    }
-  }
-  await Promise.all([worker(),worker(),worker(),worker()]);
-  if(res.some(r=>r && r.erro && /código/i.test(r.erro))){ st.className='ast warn'; st.textContent='Código de acesso inválido.'; $('#loteGo').disabled=false; return; }
-  let cur=null, novos=0;
-  const vistasPorAluno=new Map();
-  fotos.forEach((img,i)=>{
-    const j=res[i]||{};
-    if(!cur || (j && j.primeira_pagina)){
-      cur=newAluno(j.nome||'', []); S.alunos.push(cur); novos++; vistasPorAluno.set(cur,new Set());
-    }
-    cur.imgs.push(img);
-    if(j.erro){ img.erro=true; return; }
-    aplicar(cur, img, j, vistasPorAluno.get(cur));
-  });
-  S.lote=[]; renderLote(); renderAlunos(); updateGo();
-  st.className = falhas ? 'ast warn' : 'ast';
-  st.textContent = `${novos} aluno(s) encontrado(s).` + (falhas ? ` ${falhas} foto(s) não foram lidas (borda vermelha), preencha à mão.` : ' Revise nomes, separações e respostas.');
-  $('#loteGo').disabled=false;
-  const box=document.getElementById('alunos'); if(box) box.scrollIntoView({behavior:'smooth'});
-}
-
-/* ---------- separar / juntar alunos ---------- */
-// Refaz as respostas do aluno a partir da leitura de cada foto (as correções manuais desse aluno voltam à leitura da IA).
-function reconstruir(a){
-  a.resp={}; a.ab={}; const vistas=new Set();
-  a.imgs.forEach(img=>{ if(img.j) aplicar(a, img, img.j, vistas); });
-}
-function separarAqui(a, i){
-  const moved=a.imgs.splice(i);
-  const novo=newAluno(moved[0].nomeIA||'', []); novo.imgs=moved;
-  reconstruir(a); reconstruir(novo);
-  S.alunos.splice(S.alunos.indexOf(a)+1, 0, novo); renderAlunos();
-}
-function juntarAnterior(a){
-  const idx=S.alunos.indexOf(a); if(idx<1) return;
-  const prev=S.alunos[idx-1];
-  prev.imgs.push(...a.imgs);
-  if(!prev.nome.trim() && a.nome.trim()) prev.nome=a.nome;
-  reconstruir(prev);
-  S.alunos.splice(idx,1); renderAlunos();
-}
-function newAluno(nome, imgs){ imgs.sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true})); return { id:nextId++, nome, imgs, resp:{}, ab:{} }; }
-
-$('#pickSrc').onclick=async()=>{
-  if(!needFS()) return;
+$('#limparFotos').onclick=()=>confirmar('Apagar todas as fotos?',`As ${S.lote.length} fotos que ainda não foram lidas serão apagadas daqui. As fotos continuam no seu celular.`,'Apagar fotos',()=>{
+  S.lote.forEach(i=>URL.revokeObjectURL(i.url)); S.lote=[]; renderFotos(); barra();
+});
+$('#pastaSrc').onclick=async()=>{
   let h; try{ h=await window.showDirectoryPicker({mode:'read'}); }catch(e){ return; }
-  S.src=h; S.alunos.forEach(a=>a.imgs.forEach(i=>URL.revokeObjectURL(i.url))); S.alunos=[];
-  $('#srcPath').textContent=h.name+' (a ler…)'; $('#srcPath').classList.add('set');
-  const raiz=[];
-  for await (const [name, e] of h.entries()){
-    if(e.kind==='file' && IMG_RE.test(name)) raiz.push(await mkImg(e));
+  const raiz=[], novos=[];
+  for await (const [name,e] of h.entries()){
+    if(e.kind==='file' && IMG_RE.test(name)) raiz.push(mkImg(await e.getFile()));
     else if(e.kind==='directory'){
       const imgs=[];
-      for await (const [n2, e2] of e.entries()) if(e2.kind==='file' && IMG_RE.test(n2)) imgs.push(await mkImg(e2));
-      if(imgs.length) S.alunos.push(newAluno(name, imgs));
+      for await (const [n2,e2] of e.entries()) if(e2.kind==='file' && IMG_RE.test(n2)) imgs.push(mkImg(await e2.getFile()));
+      imgs.sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true}));
+      if(imgs.length){ const a=novoAluno(name); a.imgs=imgs; a.pasta=true; novos.push(a); }
     }
   }
-  S.alunos.sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
   raiz.sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true}));
-  S.lote.push(...raiz);
-  const nImg=S.alunos.reduce((s,a)=>s+a.imgs.length,0);
-  $('#srcPath').textContent=`${h.name} · ${S.alunos.length} subpasta(s) de aluno, ${nImg + raiz.length} foto(s)`;
-  renderLote(); renderAlunos(); updateGo();
-  if($('#codigo').value.trim()){
-    for(const a of S.alunos) await lerIA(a);
-    if(S.lote.length) await separarLote();
-  }
+  S.lote.push(...raiz); S.alunos.push(...novos);
+  renderFotos(); barra();
+  toast(`${raiz.length + novos.reduce((t,a)=>t+a.imgs.length,0)} fotos encontradas em "${h.name}".`);
+  if(novos.length && S.codigo){ for(const a of novos) await lerAluno(a); }
 };
-$('#pickDst').onclick=async()=>{
-  if(!needFS()) return;
-  try{ S.dst=await window.showDirectoryPicker({mode:'readwrite'}); }catch(e){ return; }
-  $('#dstPath').textContent=S.dst.name; $('#dstPath').classList.add('set'); updateGo();
-};
-function updateGo(){
-  $('#go').disabled = !S.alunos.length;
-  $('#go').textContent = S.dst ? 'Processar e gravar na pasta' : 'Processar e descarregar ZIP';
-  $('#goHint').textContent = S.dst ? 'Grava uma pasta por aluno e o Excel na pasta de destino (os originais não são alterados).' : 'Descarrega um ZIP com uma pasta por aluno, as fotos renomeadas e o Excel.';
-}
-
-/* ---------- correção ---------- */
-function score(a){
-  let corr=0, err=0, br=0, tot=0, nota=0, max=0, parc=0, pend=0;
-  for(let q=1;q<=S.n;q++){
-    if(!S.key[q]) continue; tot++; max+=peso(q);
-    if(isAb(q)){
-      const o=a.ab[q];
-      if(!o || o.nota==null){ br++; pend++; continue; }
-      if(!o.revisado) pend++;
-      const v=Math.min(Math.max(o.nota,0),peso(q)); nota+=v;
-      if(v>=peso(q)) corr++; else if(v>0) parc++; else err++;
-      continue;
-    }
-    const r=a.resp[q];
-    if(!r || r==='-') br++; else if(r===S.key[q]){ corr++; nota+=peso(q); } else err++;
-  }
-  return {corr, err, br, tot, parc, pend, nota:r2(nota), max:r2(max)};
-}
-
-function cardAluno(a){
-  const sc=score(a);
-  const el=document.createElement('section'); el.className='card aluno'; el.id='al'+a.id;
-  el.innerHTML=`<div class="ahead">
-      <input class="nome" placeholder="Nome do aluno (obrigatório)" value="${esc(a.nome)}">
-      <span class="pill">${sc.corr}/${sc.tot} acertos · ${fmt(sc.nota)} de ${fmt(sc.max)} pts</span>
-      ${sc.pend ? `<span class="pill" style="background:#fef3c7;color:#92400e">${sc.pend} aberta(s) por rever</span>` : ''}
-      <button class="ia">Ler com IA</button>${S.alunos.indexOf(a)>0 ? '<button class="merge" title="A IA separou este aluno por engano">Juntar ao aluno anterior</button>' : ''}<span class="ast"></span>
-    </div><div class="thumbs"></div><div class="resp"></div><div class="abertas"></div>`;
-  el.querySelector('.nome').oninput=e=>{ a.nome=e.target.value; };
-  el.querySelector('.ia').onclick=()=>lerIA(a);
-  const mg=el.querySelector('.merge'); if(mg) mg.onclick=()=>juntarAnterior(a);
-  const th=el.querySelector('.thumbs');
-  a.imgs.forEach((img,i)=>{
-    const d=document.createElement('div'); d.className='thumb'+(img.erro?' err':'');
-    d.innerHTML=`<img src="${img.url}" alt=""><small title="${esc(img.name)}">${esc(img.name)}</small><input placeholder="Questões ex: 6,7" value="${esc(img.q)}">${i>0?'<div class="tb"><button title="Esta foto é a primeira página de outro aluno">Novo aluno daqui</button></div>':''}`;
-    const sb=d.querySelector('.tb button'); if(sb) sb.onclick=()=>separarAqui(a,i);
-    d.querySelector('img').onclick=()=>{ $('#modal img').src=img.url; $('#modal').style.display='flex'; };
-    d.querySelector('input').oninput=e=>{ img.q=e.target.value; };
-    th.appendChild(d);
-  });
-  const rp=el.querySelector('.resp');
-  for(let q=1;q<=S.n;q++){
-    if(isAb(q)) continue;
-    const k=S.key[q], r=a.resp[q];
-    const row=document.createElement('div'); row.className='q'+(k?'':' nokey');
-    row.innerHTML=`<b>Q${pad(q)}</b>`; row.title=`Vale ${fmt(peso(q))} pts`;
-    [...LETRAS,'-'].forEach(L=>{
-      const b=document.createElement('button'); b.textContent= L==='-' ? '∅' : L;
-      b.title = L==='-' ? 'Em branco / rasurada / dupla marcação' : 'Alternativa '+L;
-      if(r===L){ b.classList.add('sel'); if(k) b.classList.add(L===k?'ok':'bad'); }
-      if(r && k && L===k && r!==k) b.classList.add('gab');
-      b.onclick=()=>{ if(a.resp[q]===L) delete a.resp[q]; else a.resp[q]=L; refresh(a); };
-      row.appendChild(b);
-    });
-    rp.appendChild(row);
-  }
-  const abx=el.querySelector('.abertas');
-  for(let q=1;q<=S.n;q++){
-    if(!isAb(q)) continue;
-    const o=a.ab[q] || {};
-    const d=document.createElement('div'); d.className='abq'+(o.revisado?'':' pend');
-    const conf = o.confianca ? `<span class="conf ${esc(o.confianca)}">confiança ${esc(o.confianca)}</span>` : '';
-    const sug = o.pontosIA!=null ? `<span class="muted">IA sugere ${fmt(o.pontosIA)}</span>` : '';
-    d.innerHTML=`<div class="hd"><b>Q${pad(q)}</b><span class="muted">aberta · vale ${fmt(peso(q))} pts</span>${conf}${sug}</div>
-      <div class="trans">${o.transcricao!=null ? marcar(o.transcricao) : '<span class="muted">Ainda não lida. Use "Ler com IA" ou escreva a nota à mão.</span>'}</div>
-      ${o.justificativa ? `<div class="muted">${esc(o.justificativa)}</div>` : ''}
-      <div class="row"><label>Nota <input class="nota" type="number" min="0" max="${peso(q)}" step="0.05" value="${o.nota!=null?o.nota:''}"></label>
-      ${o.revisado ? '<span class="ok-txt">✓ revista</span>' : '<button class="conf-btn">Confirmar nota</button>'}</div>`;
-    d.querySelector('.nota').onchange=e=>{
-      const v=parseFloat(String(e.target.value).replace(',','.'));
-      a.ab[q]={...o, nota: isNaN(v)?null:Math.min(Math.max(v,0),peso(q)), revisado: !isNaN(v)}; refresh(a);
+function renderFotos(){
+  $('#fotosCard').style.display = S.lote.length ? '' : 'none';
+  $('#comoCard').style.display = S.lote.length ? 'none' : '';
+  $('#fotosTit').textContent = `${S.lote.length} foto${S.lote.length===1?'':'s'}`;
+  $('#limparFotos').style.display = S.lendo ? 'none' : '';
+  const box=$('#fotos'); box.innerHTML='';
+  S.lote.forEach((img,i)=>{
+    const d=document.createElement('div'); d.className='ft';
+    d.innerHTML=`<img src="${img.url}" alt="Foto ${i+1}"><span class="n">${i+1}</span>${S.lendo?'':`<button class="x" aria-label="Apagar foto ${i+1}">✕</button>`}`;
+    d.querySelector('img').onclick=()=>zoom(img.url);
+    const x=d.querySelector('.x'); if(x) x.onclick=()=>{
+      S.lote.splice(i,1); renderFotos(); barra();
+      toast(`Foto ${i+1} apagada.`, {texto:'Desfazer', fn:()=>{ S.lote.splice(Math.min(i,S.lote.length),0,img); renderFotos(); barra(); }});
     };
-    const cb=d.querySelector('.conf-btn');
-    if(cb) cb.onclick=()=>{ const v=parseFloat(String(d.querySelector('.nota').value).replace(',','.')); if(isNaN(v)) return; a.ab[q]={...o, nota:Math.min(Math.max(v,0),peso(q)), revisado:true}; refresh(a); };
-    abx.appendChild(d);
-  }
-  return el;
+    box.appendChild(d);
+  });
+  $('#leitura').style.display = S.lendo ? '' : 'none';
 }
-function marcar(t){
-  return esc(t).replace(/\[\?(.*?)\?\]/g,'<mark title="leitura duvidosa">$1?</mark>').replace(/\[ilegível\]/gi,'<mark class="ileg">[ilegível]</mark>');
-}
-function refresh(a){ const old=document.getElementById('al'+a.id); if(old) old.replaceWith(cardAluno(a)); resumo(); }
-function renderAlunos(){
-  const box=$('#alunos'); box.innerHTML='';
-  if(!S.alunos.length){ box.innerHTML='<div class="card empty">Tire ou escolha as fotos das provas para começar.</div>'; resumo(); return; }
-  S.alunos.forEach(a=>box.appendChild(cardAluno(a))); resumo();
-}
-function resumo(){
-  if(!S.alunos.length){ $('#resumo').textContent=''; return; }
-  const notas=S.alunos.map(a=>score(a).nota);
-  const media=notas.reduce((s,n)=>s+n,0)/notas.length;
-  $('#resumo').textContent=`· ${S.alunos.length} aluno(s) · média ${fmt(media)}`;
-}
-$('#modal').onclick=()=>{ $('#modal').style.display='none'; };
 
-/* ---------- leitura com IA ---------- */
+/* ================= Leitura com IA ================= */
 async function toB64(file){
   const bmp=await createImageBitmap(file);
   const max=1568, s=Math.min(1, max/Math.max(bmp.width,bmp.height));
@@ -504,14 +662,15 @@ async function toB64(file){
   c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
   return c.toDataURL('image/jpeg',0.85).split(',')[1];
 }
-function abertasCfg(){ const o={}; for(let q=1;q<=S.n;q++) if(isAb(q)) o[q]={valor:peso(q), criterio:S.crit[q]||''}; return o; }
-async function lerFoto(img, codigo){
+function abertasCfg(){ const o={}; for(let q=1;q<=S.n;q++) if(isAb(q)) o[q]={valor:r2(peso(q)), criterio:S.crit[q]||''}; return o; }
+async function lerFoto(img){
   const res=await fetch('/api/ler',{method:'POST',headers:{'content-type':'application/json'},
-    body:JSON.stringify({codigo, imagem:await toB64(img.file), abertas:abertasCfg()})});
+    body:JSON.stringify({codigo:S.codigo, imagem:await toB64(img.file), abertas:abertasCfg()})});
   const j=await res.json().catch(()=>({}));
-  if(!res.ok) throw new Error(j.erro || ('HTTP '+res.status));
+  if(!res.ok){ const e=new Error(j.erro || ('Erro '+res.status)); e.codigo = res.status===401; throw e; }
   return j;
 }
+function novoAluno(nome){ return { id:nextId++, nome:nome||'', imgs:[], resp:{}, ab:{}, manual:{resp:{},ab:{}} }; }
 function aplicar(a, img, j, vistas){
   img.erro=false; img.j=j;
   if(j.nome){ img.nomeIA=j.nome; if(!a.nome.trim()) a.nome=j.nome; }
@@ -528,219 +687,381 @@ function aplicar(a, img, j, vistas){
       const ant=a.ab[q];
       novo.transcricao=ant.transcricao+'\n'+novo.transcricao;
       novo.pontosIA=novo.nota=Math.max(ant.pontosIA??0, pts??0);
-      novo.justificativa='Resposta em mais de uma foto, avalie o conjunto. '+novo.justificativa;
+      novo.justificativa='A resposta continua em outra foto, avalie o conjunto. '+novo.justificativa;
       novo.confianca='baixa';
     }
     vistas.add(q); a.ab[q]=novo;
   });
 }
-async function lerIA(a){
-  const st=()=>document.querySelector('#al'+a.id+' .ast');
-  const codigo=$('#codigo').value.trim();
-  if(!codigo){ st().textContent='Indique o código de acesso acima.'; st().className='ast warn'; return; }
-  st().className='ast';
-  let falhas=0; const vistas=new Set();
-  for(let i=0;i<a.imgs.length;i++){
-    st().textContent=`A ler foto ${i+1} de ${a.imgs.length}…`;
-    try{ aplicar(a, a.imgs[i], await lerFoto(a.imgs[i], codigo), vistas); }
-    catch(e){
-      falhas++; a.imgs[i].erro=true;
-      if(/código/i.test(e.message)){ refresh(a); st().className='ast warn'; st().textContent=e.message; return; }
+// Refaz as respostas a partir da leitura de cada foto e volta a aplicar o que a professora corrigiu à mão.
+function reconstruir(a){
+  a.resp={}; a.ab={}; const v=new Set(); a.imgs.forEach(img=>{ if(img.j) aplicar(a,img,img.j,v); });
+  const m=a.manual||(a.manual={resp:{},ab:{}});
+  Object.entries(m.resp).forEach(([q,r])=>a.resp[q]=r);
+  Object.entries(m.ab).forEach(([q,o])=>a.ab[q]={...(a.ab[q]||{}),...o});
+}
+function questoesDe(imgs){ const out=new Set(); imgs.forEach(im=>String(im.q||'').split(/[^0-9]+/).filter(Boolean).forEach(n=>out.add(String(+n)))); return out; }
+
+async function separarLote(){
+  if(!S.lote.length || S.lendo) return;
+  S.lendo=true; renderFotos(); barra();
+  const fotos=S.lote.slice(), res=new Array(fotos.length);
+  let feitas=0, falhas=0, codigoRuim=false, next=0;
+  const prog=()=>{ $('#progBar').style.width=Math.round(feitas/fotos.length*100)+'%'; $('#progTxt').textContent=`Lendo foto ${Math.min(feitas+1,fotos.length)} de ${fotos.length}. Pode deixar o celular parado, leva alguns segundos por foto.`; };
+  prog();
+  async function worker(){
+    while(next<fotos.length && !codigoRuim){
+      const i=next++;
+      try{ res[i]=await lerFoto(fotos[i]); }
+      catch(e){ res[i]={erro:e.message}; falhas++; if(e.codigo) codigoRuim=true; }
+      feitas++; prog();
     }
   }
-  refresh(a);
-  st().className = falhas ? 'ast warn' : 'ast';
-  st().textContent = falhas ? `${falhas} foto(s) não foram lidas, preencha à mão.` : 'Lido pela IA, revise as marcações e confirme as notas das abertas.';
+  await Promise.all([worker(),worker(),worker(),worker()]);
+  S.lendo=false;
+  if(codigoRuim){
+    renderFotos(); barra();
+    $('#codigo').value=S.codigo; abrir('#shCodigo'); toast('O código de acesso não está certo. Confira e tente de novo.');
+    return;
+  }
+  let cur=null; const vistas=new Map(), criados=[];
+  fotos.forEach((img,i)=>{
+    const j=res[i]||{};
+    if(!cur || j.primeira_pagina){ cur=novoAluno(j.nome||''); criados.push(cur); vistas.set(cur,new Set()); }
+    cur.imgs.push(img);
+    if(j.erro){ img.erro=true; return; }
+    aplicar(cur, img, j, vistas.get(cur));
+  });
+  S.alunos.push(...criados); S.lote=[];
+  toast(`${criados.length} aluno${criados.length>1?'s':''} encontrado${criados.length>1?'s':''}.${falhas?` ${falhas} foto${falhas>1?'s':''} sem leitura.`:''}`);
+  ir(3);
 }
-$('#iaAll').onclick=async()=>{ for(const a of S.alunos) await lerIA(a); };
+function semLeitura(){
+  const a=novoAluno(''); a.imgs=S.lote.slice(); a.dica=true; S.alunos.push(a); S.lote=[];
+  S.aberto=a.id; ir(3);
+}
+async function lerAluno(a){
+  a.lendo=true; renderConferir();
+  const v=new Set(); a.resp={}; a.ab={}; a.manual={resp:{},ab:{}}; let codigoRuim=false;
+  for(const img of a.imgs){
+    try{ aplicar(a,img,await lerFoto(img),v); }
+    catch(e){ img.erro=true; if(e.codigo){ codigoRuim=true; break; } }
+  }
+  a.lendo=false; renderConferir(); barra();
+  if(codigoRuim){ $('#codigo').value=S.codigo; abrir('#shCodigo'); toast('O código de acesso não está certo.'); }
+}
 
-/* ---------- relatórios ---------- */
+/* ================= Nota ================= */
+function score(a){
+  let corr=0, err=0, br=0, tot=0, nota=0, max=0, parc=0, pend=0;
+  for(let q=1;q<=S.n;q++){
+    if(!S.key[q]) continue; tot++; max+=peso(q);
+    if(isAb(q)){
+      const o=a.ab[q];
+      if(!o || o.nota==null){ br++; pend++; continue; }
+      if(!o.revisado) pend++;
+      const v=Math.min(Math.max(o.nota,0),peso(q)); nota+=v;
+      if(v>=peso(q)-1e-9) corr++; else if(v>0) parc++; else err++;
+      continue;
+    }
+    const r=a.resp[q];
+    if(!r || r==='-') br++; else if(r===S.key[q]){ corr++; nota+=peso(q); } else err++;
+  }
+  return {corr, err, br, tot, parc, pend, nota:r2(nota), max:r2(max)};
+}
+function atencao(a){
+  const semNome = a.nome.trim() ? 0 : 1;
+  const semLeitura = a.imgs.filter(i=>i.erro).length;
+  const naoLidas = chaves().filter(q=>!isAb(q) && !a.resp[q]).length;
+  const pend = score(a).pend;
+  return { semNome, semLeitura, naoLidas, pend, total: semNome+semLeitura+pend+(naoLidas?1:0) };
+}
+
+/* ================= Passo 3: conferir ================= */
+function renderConferir(){
+  const box=$('#conferir'); box.innerHTML='';
+  if(!S.alunos.length){
+    box.innerHTML=`<div class="card vazio"><div class="ic">📋</div><p><b>Ainda não há provas para conferir.</b></p><p>Tire as fotos na etapa anterior.</p><button class="btn" id="irFotos">Ir para as fotos</button></div>`;
+    $('#irFotos').onclick=()=>ir(2); return;
+  }
+  const at=S.alunos.filter(a=>atencao(a).total).length;
+  const notas=S.alunos.map(a=>score(a).nota), media=notas.reduce((s,n)=>s+n,0)/notas.length;
+  const r=document.createElement('div'); r.className='resumo';
+  r.innerHTML=`<div><b>${S.alunos.length}</b><span>aluno${S.alunos.length>1?'s':''}</span></div><div><b>${fmt(media)}</b><span>média da turma</span></div><div><b style="color:${at?'var(--warn)':'var(--ok)'}">${at}</b><span>para conferir</span></div>`;
+  box.appendChild(r);
+  if(at){ const p=document.createElement('p'); p.className='help'; p.textContent='Abra os alunos marcados em laranja e confira o que o sistema não teve certeza.'; box.appendChild(p); }
+  S.alunos.forEach((a,idx)=>box.appendChild(cartaoAluno(a,idx)));
+}
+function cartaoAluno(a, idx){
+  const sc=score(a), at=atencao(a);
+  const el=document.createElement('div'); el.className='al'+(S.aberto===a.id?' open':''); el.id='al'+a.id;
+  let tag;
+  if(a.lendo) tag='<span class="tag warn">Lendo…</span>';
+  else if(at.semNome) tag='<span class="tag bad">Falta o nome</span>';
+  else if(at.total) tag=`<span class="tag warn">Conferir ${at.total} ${at.total>1?'itens':'item'}</span>`;
+  else tag='<span class="tag ok">Pronto</span>';
+  el.innerHTML=`<button class="al-hd" aria-expanded="${S.aberto===a.id}">
+      <span class="who"><b>${a.nome.trim()?esc(a.nome):'Aluno sem nome'}</b><small>${a.imgs.length} foto${a.imgs.length>1?'s':''}</small><br>${tag}</span>
+      <span class="nt"><b>${fmt(sc.nota)}</b><small>de ${fmt(sc.max)}</small></span><span class="seta" aria-hidden="true">›</span>
+    </button><div class="al-body"></div>`;
+  el.querySelector('.al-hd').onclick=()=>{ S.aberto = S.aberto===a.id ? null : a.id; renderConferir(); if(S.aberto){ const n=document.getElementById('al'+a.id); n && n.scrollIntoView({block:'start',behavior:'smooth'}); } };
+  if(S.aberto===a.id) corpoAluno(el.querySelector('.al-body'), a, idx, at);
+  return el;
+}
+function corpoAluno(b, a, idx, at){
+  b.innerHTML=`<label class="field"><span>Nome do aluno</span><input type="text" class="nome" value="${esc(a.nome)}" placeholder="Escreva o nome do aluno"></label>
+    <div class="sub">Fotos desta prova</div>
+    <p class="help" style="margin:0 0 6px">Se uma foto for de outro aluno, toque nos três pontinhos dela.</p>
+    <div class="strip"></div>
+    <div class="qbox"></div><div class="abbox"></div>
+    <div class="row" style="margin-top:16px">
+      ${S.codigo?'<button class="btn reler">🔄 Ler de novo</button>':''}
+      ${idx>0?'<button class="btn juntar">Juntar com o aluno de cima</button>':''}
+    </div>`;
+  const nm=b.querySelector('.nome');
+  nm.oninput=()=>{ a.nome=nm.value; guardarSessao(); };
+  nm.onchange=()=>{ renderConferir(); barra(); };
+  const st=b.querySelector('.strip');
+  a.imgs.forEach((img,i)=>{
+    const d=document.createElement('div'); d.className='ft'+(img.erro?' err':'');
+    d.innerHTML=`<img src="${img.url}" alt="Foto ${i+1} de ${esc(a.nome||'aluno')}"><span class="n">${i+1}</span><button class="mais" aria-label="Opções da foto ${i+1}">⋯</button>`;
+    d.querySelector('img').onclick=()=>zoom(img.url);
+    d.querySelector('.mais').onclick=()=>menuFoto(a,i);
+    st.appendChild(d);
+  });
+  if(a.dica) b.querySelector('.strip').insertAdjacentHTML('beforebegin','<p class="aviso">Todas as fotos estão juntas aqui. Na primeira página de cada aluno, toque nos três pontinhos e escolha "Esta foto é de outro aluno".</p>');
+  if(at.semLeitura) b.querySelector('.strip').insertAdjacentHTML('afterend',`<p class="aviso" style="margin-top:8px">${at.semLeitura} foto${at.semLeitura>1?'s':''} com borda vermelha não ${at.semLeitura>1?'foram lidas':'foi lida'}. Marque as respostas dela${at.semLeitura>1?'s':''} à mão.</p>`);
+  const obj=chaves().filter(q=>!isAb(q));
+  if(obj.length){
+    const qb=b.querySelector('.qbox');
+    qb.innerHTML=`<div class="sub">Respostas marcadas</div><p class="help" style="margin:0 0 4px">Verde: certa. Vermelho: errada. Tracejado: a resposta certa. Se a leitura estiver errada, toque na letra que o aluno marcou.</p><div class="qcols"></div>`;
+    const cols=qb.querySelector('.qcols');
+    obj.forEach(q=>{
+      const k=S.key[q], r=a.resp[q];
+      const row=document.createElement('div'); row.className='qrow';
+      const marca = !r ? '<span class="res" style="color:var(--warn)" title="Não lida">?</span>' : (r===k ? '<span class="res" style="color:var(--ok)">✓</span>' : '<span class="res" style="color:var(--bad)">✗</span>');
+      row.innerHTML=`<span class="qn">${q}</span>${marca}`;
+      [...LETRAS,'-'].forEach(L=>{
+        const c=document.createElement('button'); c.className='chip'; c.textContent= L==='-' ? '∅' : L;
+        c.setAttribute('aria-label', `Questão ${q}: ${L==='-'?'em branco ou rasurada':'marcou '+L}`);
+        c.setAttribute('aria-pressed', r===L);
+        if(r===L) c.classList.add(L===k?'c-ok':'c-bad');
+        else if(r && L===k) c.classList.add('c-gab');
+        c.onclick=()=>{ a.resp[q]=L; (a.manual||(a.manual={resp:{},ab:{}})).resp[q]=L; renderConferir(); barra(); };
+        row.appendChild(c);
+      });
+      cols.appendChild(row);
+    });
+  }
+  const abs=chaves().filter(isAb);
+  if(abs.length){
+    const ab=b.querySelector('.abbox');
+    ab.innerHTML='<div class="sub">Questões abertas</div><p class="help" style="margin:0">Palavras em amarelo o sistema não teve certeza de como ler. Confira com a foto.</p>';
+    abs.forEach(q=>{
+      const o=a.ab[q]||{};
+      const d=document.createElement('div'); d.className='abq'+(o.revisado?'':' pend');
+      const conf={alta:'leitura segura',media:'leitura com dúvidas',baixa:'leitura difícil, confira com cuidado'}[o.confianca]||'';
+      d.innerHTML=`<div class="row" style="justify-content:space-between"><b>Questão ${q}</b><span class="ia-c">vale ${fmt(peso(q))} pts${conf?' · '+conf:''}</span></div>
+        <div class="trans">${o.transcricao!=null ? marcar(o.transcricao) || '<i>(em branco)</i>' : '<span class="ia-c">Ainda não lida. Olhe a foto e dê a nota.</span>'}</div>
+        ${o.justificativa?`<div class="ia-c">Sugestão do sistema: ${o.pontosIA!=null?`<b>${fmt(o.pontosIA)} pts</b>. `:''}${esc(o.justificativa)}</div>`:''}
+        <div class="nota-in"><label class="row" style="gap:6px">Nota <input type="number" min="0" max="${r2(peso(q))}" step="0.25" inputmode="decimal" value="${o.nota!=null?o.nota:''}" aria-label="Nota da questão ${q}"></label>
+        ${o.revisado?'<span class="feito">✓ Conferida</span>':'<button class="btn ok">✓ Confirmar nota</button>'}</div>`;
+      const inp=d.querySelector('input');
+      const gravar=rev=>{ const v=num(inp.value); a.ab[q]={...o, nota: v==null?null:Math.min(Math.max(v,0),peso(q)), revisado: rev && v!=null};
+        (a.manual||(a.manual={resp:{},ab:{}})).ab[q]={nota:a.ab[q].nota, revisado:a.ab[q].revisado}; renderConferir(); barra(); };
+      inp.onchange=()=>gravar(o.revisado);
+      const okb=d.querySelector('.ok'); if(okb) okb.onclick=()=>{ if(num(inp.value)==null){ inp.focus(); toast('Escreva a nota antes de confirmar.'); return; } gravar(true); };
+      ab.appendChild(d);
+    });
+  }
+  const rl=b.querySelector('.reler'); if(rl) rl.onclick=()=>confirmar('Ler este aluno de novo?','As respostas deste aluno serão lidas outra vez. O que você corrigiu à mão neste aluno será substituído.','Ler de novo',()=>lerAluno(a));
+  const jt=b.querySelector('.juntar'); if(jt) jt.onclick=()=>juntarAnterior(a);
+}
+function marcar(t){
+  return esc(t).replace(/\[\?(.*?)\?\]/g,'<mark title="Leitura duvidosa">$1</mark>').replace(/\[ilegível\]/gi,'<mark class="ileg">ilegível</mark>');
+}
+function menuFoto(a, i){
+  const img=a.imgs[i];
+  $('#sfTit').textContent=`Foto ${i+1} de ${a.nome.trim()||'aluno sem nome'}`;
+  const l=$('#sfLista'); l.innerHTML='';
+  const item=(ico,cor,tit,sub,fn)=>{ const b=document.createElement('button'); b.innerHTML=`<span class="ico" style="background:${cor}">${ico}</span><span class="tx">${tit}<small>${sub}</small></span><span class="chev">›</span>`; b.onclick=()=>{ fecharFolha(); fn(); }; l.appendChild(b); };
+  item('🔍','#64748b','Ver foto grande','Para conferir a leitura',()=>zoom(img.url));
+  if(i>0) item('✂️','#2457f5','Esta foto é de outro aluno','Cria um aluno novo a partir desta foto',()=>{ separarAqui(a,i); toast('Aluno novo criado. Confira o nome.'); });
+  const idx=S.alunos.indexOf(a);
+  if(i===0 && idx>0) item('⤴️','#0f766e','Esta foto é do aluno de cima','Junta este aluno com o anterior',()=>juntarAnterior(a));
+  abrir('#shFoto');
+}
+function separarAqui(a,i){
+  const moved=a.imgs.splice(i);
+  const novo=novoAluno(moved[0].nomeIA||''); novo.imgs=moved;
+  const qs=questoesDe(moved), m=a.manual||{resp:{},ab:{}};
+  ['resp','ab'].forEach(t=>Object.keys(m[t]).forEach(q=>{ if(qs.has(String(q))){ novo.manual[t][q]=m[t][q]; delete m[t][q]; } }));
+  reconstruir(a); reconstruir(novo);
+  S.alunos.splice(S.alunos.indexOf(a)+1,0,novo); S.aberto=novo.id; renderConferir(); barra();
+}
+function juntarAnterior(a){
+  const idx=S.alunos.indexOf(a); if(idx<1) return;
+  const prev=S.alunos[idx-1];
+  prev.imgs.push(...a.imgs);
+  if(!prev.nome.trim() && a.nome.trim()) prev.nome=a.nome;
+  const pm=prev.manual||(prev.manual={resp:{},ab:{}}), am=a.manual||{resp:{},ab:{}};
+  ['resp','ab'].forEach(t=>Object.keys(am[t]).forEach(q=>{ if(!(q in pm[t])) pm[t][q]=am[t][q]; }));
+  reconstruir(prev); S.alunos.splice(idx,1); S.aberto=prev.id; renderConferir(); barra();
+  toast(`Fotos juntadas em ${prev.nome.trim()||'aluno sem nome'}.`);
+}
+
+/* ================= Passo 4: entregar ================= */
+function renderEntregar(){
+  $('#opCompleto').setAttribute('aria-pressed',S.relTipo==='completo');
+  $('#opResumo').setAttribute('aria-pressed',S.relTipo==='resumo');
+  const semNome=S.alunos.filter(a=>!a.nome.trim()).length;
+  const pend=S.alunos.reduce((t,a)=>t+score(a).pend,0);
+  const av=[];
+  if(!S.alunos.length) av.push('Ainda não há provas corrigidas.');
+  if(semNome) av.push(`${semNome} aluno${semNome>1?'s':''} sem nome.`);
+  if(pend) av.push(pend>1 ? `${pend} questões abertas sem conferir: saem como "nota provisória".` : `1 questão aberta sem conferir: sai como "nota provisória".`);
+  $('#avisoEntrega').textContent=av.join(' ');
+  $('#guardar').textContent = S.dst ? `💾 Salvar na pasta "${S.dst.name}"` : '⬇️ Baixar fotos, planilha e relatórios';
+  $('#guardarHelp').textContent = S.dst ? 'Cria uma pasta por aluno com as fotos nomeadas, a planilha de notas e os relatórios.' : 'Baixa um arquivo ZIP com uma pasta por aluno (fotos com nome), a planilha de notas e os relatórios.';
+  $('#guardar').disabled=!S.alunos.length;
+  barra();
+}
+$('#opCompleto').onclick=()=>{ S.relTipo='completo'; renderEntregar(); };
+$('#opResumo').onclick=()=>{ S.relTipo='resumo'; renderEntregar(); };
+
 function linhasAluno(a){
   const out=[];
-  for(let q=1;q<=S.n;q++){
-    const k=S.key[q]; if(!k) continue;
-    if(isAb(q)){
-      const o=a.ab[q]||{}; const v=o.nota;
-      out.push({q, ab:true, o, pts:v??0, res: v==null?'Sem nota':(v>=peso(q)?'Certa':(v>0?'Parcial':'Errada'))});
-    } else {
-      const r=a.resp[q];
-      out.push({q, ab:false, r, k, pts: r===k?peso(q):0, res: !r||r==='-' ? 'Em branco' : (r===k?'Certa':'Errada')});
-    }
+  for(const q of chaves()){
+    if(isAb(q)){ const o=a.ab[q]||{}, v=o.nota; out.push({q,ab:true,o,pts:v??0,res: v==null?'Sem nota':(v>=peso(q)-1e-9?'Certa':(v>0?'Parcial':'Errada'))}); }
+    else { const r=a.resp[q], k=S.key[q]; out.push({q,ab:false,r,k,pts:r===k?peso(q):0,res: !r||r==='-'?'Em branco':(r===k?'Certa':'Errada')}); }
   }
   return out;
 }
-const REL_CSS = `
-  *{box-sizing:border-box} body{font:11pt/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#111;margin:0}
-  @page{size:A4;margin:14mm}
-  .pg{page-break-after:always} .pg:last-child{page-break-after:auto}
+const REL_CSS=`*{box-sizing:border-box} body{font:11pt/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#111;margin:0}
+  @page{size:A4;margin:14mm} .pg{page-break-after:always} .pg:last-child{page-break-after:auto}
   h1{font-size:15pt;margin:0} .sub{color:#555;font-size:10pt}
   .top{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #111;padding-bottom:6px;margin-bottom:10px}
   .nota{text-align:right} .nota b{font-size:22pt;display:block;line-height:1}
-  table{width:100%;border-collapse:collapse;font-size:10pt} th,td{border:1px solid #bbb;padding:3px 6px;text-align:left}
-  th{background:#f1f1f1} td.c{text-align:center} .Certa{color:#15803d;font-weight:600} .Errada{color:#b91c1c;font-weight:600} .Parcial{color:#b45309;font-weight:600}
+  table{width:100%;border-collapse:collapse;font-size:10pt} th,td{border:1px solid #bbb;padding:3px 6px;text-align:left} th{background:#f1f1f1} td.c{text-align:center}
+  .Certa{color:#15803d;font-weight:600}.Errada{color:#b91c1c;font-weight:600}.Parcial{color:#b45309;font-weight:600}
   .ab{border:1px solid #bbb;border-radius:4px;padding:6px 8px;margin-top:8px;page-break-inside:avoid}
-  .tr{font-family:Georgia,serif;white-space:pre-wrap;background:#fafafa;padding:4px 6px;margin:4px 0}
-  mark{background:#fde68a}
+  .tr{font-family:Georgia,serif;white-space:pre-wrap;background:#fafafa;padding:4px 6px;margin:4px 0} mark{background:#fde68a}
   .obs{margin-top:14px} .ln{border-bottom:1px solid #999;height:22px}
   .ass{display:flex;gap:30px;margin-top:22px} .ass div{flex:1;border-top:1px solid #111;padding-top:3px;font-size:9pt;text-align:center}
   .prov{color:#b45309;font-size:9pt}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:0}
+  .grid{display:grid;grid-template-columns:1fr 1fr}
   .fx{border:1px dashed #888;padding:9mm 8mm;height:128mm;page-break-inside:avoid;overflow:hidden}
   .fx h2{font-size:13pt;margin:0 0 2px} .fx .big{font-size:30pt;font-weight:700;line-height:1.1;margin:8px 0 2px}
   .fx ul{padding-left:16px;margin:6px 0;font-size:10pt} .fx .muted{color:#555;font-size:9.5pt}
-  .tool{padding:10px;background:#eef2ff;font:13px system-ui;display:flex;gap:10px;align-items:center}
-  @media print{.tool{display:none}}`;
+  .tool{padding:12px;background:#e9efff;font:15px system-ui;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .tool button{font:inherit;font-weight:600;padding:10px 16px;border-radius:10px;border:0;background:#2457f5;color:#fff}
+  @media print{.tool{display:none}}
+  @media screen and (max-width:600px){ body{padding:0 8px} .tp{display:none} th,td{padding:3px 4px} .grid{grid-template-columns:1fr} .fx{height:auto} }`;
 function relatorioHTML(tipo){
-  const hoje=new Date().toLocaleDateString('pt-BR');
-  const prova=esc(S.prova||'');
+  const hoje=new Date().toLocaleDateString('pt-BR'), prova=esc(S.prova||'');
+  const nomeA=a=>esc(a.nome.trim()||'(sem nome)');
   let body='';
   if(tipo==='resumo'){
     const fichas=S.alunos.map(a=>{
-      const sc=score(a), ls=linhasAluno(a);
-      const erradas=ls.filter(l=>l.res!=='Certa');
-      const itens=erradas.slice(0,14).map(l=> l.ab
-        ? `<li>Q${pad(l.q)} (aberta): ${l.res==='Sem nota' ? 'sem nota' : fmt(l.pts)+' de '+fmt(peso(l.q))+' pts'}</li>`
-        : `<li>Q${pad(l.q)}: ${l.r&&l.r!=='-' ? 'marcou '+esc(l.r) : 'em branco'}, resposta certa <b>${esc(l.k)}</b></li>`).join('');
-      const mais = erradas.length>14 ? `<li>… e mais ${erradas.length-14}</li>` : '';
-      return `<div class="fx"><h2>${esc(a.nome||'(sem nome)')}</h2>
-        <div class="muted">Prova ${prova} · ${hoje}</div>
+      const sc=score(a), err=linhasAluno(a).filter(l=>l.res!=='Certa');
+      const it=err.slice(0,14).map(l=> l.ab ? `<li>Questão ${l.q} (aberta): ${l.res==='Sem nota'?'sem nota':fmt(l.pts)+' de '+fmt(peso(l.q))+' pts'}</li>`
+        : `<li>Questão ${l.q}: ${l.r&&l.r!=='-'?'marcou '+esc(l.r):'em branco'}, a certa é <b>${esc(l.k)}</b></li>`).join('') + (err.length>14?`<li>e mais ${err.length-14}</li>`:'');
+      return `<div class="fx"><h2>${nomeA(a)}</h2><div class="muted">${prova?'Prova '+prova+' · ':''}${hoje}</div>
         <div class="big">${fmt(sc.nota)} <span style="font-size:14pt;font-weight:400">de ${fmt(sc.max)}</span></div>
-        <div class="muted">${sc.corr} certas${sc.parc?`, ${sc.parc} parciais`:''}, ${sc.err} erradas, ${sc.br} em branco${sc.pend?' · <span class="prov">nota provisória</span>':''}</div>
-        ${erradas.length ? `<div style="margin-top:8px;font-weight:600">Para rever</div><ul>${itens}${mais}</ul>` : '<p><b>Acertou todas as questões.</b></p>'}</div>`;
+        <div class="muted">${contagem(sc)}${sc.pend?' · <span class="prov">nota provisória</span>':''}</div>
+        ${err.length?`<div style="margin-top:8px;font-weight:600">Para rever</div><ul>${it}</ul>`:'<p><b>Acertou todas as questões.</b></p>'}</div>`;
     });
     for(let i=0;i<fichas.length;i+=4) body+=`<div class="pg grid">${fichas.slice(i,i+4).join('')}</div>`;
   } else {
     body=S.alunos.map(a=>{
       const sc=score(a), ls=linhasAluno(a);
-      const rows=ls.map(l=>`<tr><td class="c">${pad(l.q)}</td><td>${l.ab?'Aberta':'Objetiva'}</td>
-        <td class="c">${l.ab?'ver abaixo':(l.r&&l.r!=='-'?esc(l.r):'—')}</td><td class="c">${l.ab?'—':esc(l.k)}</td>
-        <td class="${l.res}">${l.res}</td><td class="c">${fmt(l.pts)} / ${fmt(peso(l.q))}</td></tr>`).join('');
-      const abs=ls.filter(l=>l.ab).map(l=>`<div class="ab"><b>Questão ${pad(l.q)}</b> · ${fmt(l.pts)} de ${fmt(peso(l.q))} pts
-        ${l.o.revisado?'':'<span class="prov">(nota provisória)</span>'}
-        <div class="tr">${l.o.transcricao!=null?marcar(l.o.transcricao):'(não lida)'}</div>
-        ${l.o.justificativa?`<div><i>Comentário:</i> ${esc(l.o.justificativa)}</div>`:''}</div>`).join('');
-      return `<div class="pg">
-        <div class="top"><div><h1>${esc(a.nome||'(sem nome)')}</h1><div class="sub">Prova ${prova} · ${hoje}</div></div>
-          <div class="nota"><b>${fmt(sc.nota)}</b>de ${fmt(sc.max)} pontos</div></div>
-        <p class="sub">${sc.corr} certas${sc.parc?`, ${sc.parc} parciais`:''}, ${sc.err} erradas, ${sc.br} em branco${sc.pend?` · <span class="prov">${sc.pend} questão(ões) aberta(s) com nota provisória</span>`:''}</p>
-        <table><thead><tr><th>Q</th><th>Tipo</th><th>Marcou</th><th>Gabarito</th><th>Resultado</th><th>Pontos</th></tr></thead><tbody>${rows}</tbody></table>
-        ${abs}
+      const rows=ls.map(l=>`<tr><td class="c">${l.q}</td><td class="tp">${l.ab?'Aberta':'Objetiva'}</td><td class="c">${l.ab?'ver abaixo':(l.r&&l.r!=='-'?esc(l.r):'em branco')}</td><td class="c">${l.ab?'':esc(l.k)}</td><td class="${l.res}">${l.res}</td><td class="c">${fmt(l.pts)} de ${fmt(peso(l.q))}</td></tr>`).join('');
+      const abs=ls.filter(l=>l.ab).map(l=>`<div class="ab"><b>Questão ${l.q}</b> · ${fmt(l.pts)} de ${fmt(peso(l.q))} pts ${l.o.revisado?'':'<span class="prov">(nota provisória)</span>'}
+        <div class="tr">${l.o.transcricao!=null?marcar(l.o.transcricao):'(não lida)'}</div>${l.o.justificativa?`<div><i>Comentário:</i> ${esc(l.o.justificativa)}</div>`:''}</div>`).join('');
+      return `<div class="pg"><div class="top"><div><h1>${nomeA(a)}</h1><div class="sub">${prova?'Prova '+prova+' · ':''}${hoje}</div></div><div class="nota"><b>${fmt(sc.nota)}</b>de ${fmt(sc.max)} pontos</div></div>
+        <p class="sub">${contagem(sc)}${sc.pend?` · <span class="prov">${sc.pend>1?sc.pend+' questões abertas com nota provisória':'1 questão aberta com nota provisória'}</span>`:''}</p>
+        <table><thead><tr><th>Questão</th><th class="tp">Tipo</th><th>Marcou</th><th>Certa</th><th>Resultado</th><th>Pontos</th></tr></thead><tbody>${rows}</tbody></table>${abs}
         <div class="obs"><b>Observações da professora</b><div class="ln"></div><div class="ln"></div><div class="ln"></div></div>
-        <div class="ass"><div>Professora</div><div>Responsável pelo aluno</div></div>
-      </div>`;
+        <div class="ass"><div>Professora</div><div>Responsável pelo aluno</div></div></div>`;
     }).join('');
   }
   return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Relatórios ${prova}</title><style>${REL_CSS}</style></head>
-    <body><div class="tool"><button onclick="window.print()">🖨 Imprimir</button><span>Pode também guardar como PDF na janela de impressão.</span></div>${body}</body></html>`;
+    <body><div class="tool"><button onclick="window.print()">🖨️ Imprimir</button><span>Na janela de impressão você também pode salvar como PDF.</span></div>${body}</body></html>`;
 }
-$('#relPrint').onclick=()=>{
-  $('#log').innerHTML='';
-  if(!S.alunos.length){ log('Ainda não há alunos para o relatório.','warn'); return; }
-  const pend=S.alunos.reduce((t,a)=>t+score(a).pend,0);
-  if(pend) log(`⚠ Há ${pend} questão(ões) aberta(s) por rever. Aparecem no relatório como "nota provisória".`,'warn');
-  const html=relatorioHTML($('#relTipo').value);
-  const wdw=window.open('','_blank');
-  if(wdw){ wdw.document.open(); wdw.document.write(html); wdw.document.close(); setTimeout(()=>{ try{ wdw.focus(); wdw.print(); }catch(e){} }, 400); }
-  else {
-    const link=document.createElement('a'); link.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));
-    link.download=`Relatorios_${safe(S.prova||'PROVA')}.html`; document.body.appendChild(link); link.click(); link.remove();
-    log('O navegador bloqueou a janela; o relatório foi descarregado. Abra-o e imprima.');
-  }
-};
+function imprimir(){
+  if(!S.alunos.length) return;
+  const html=relatorioHTML(S.relTipo), w=window.open('','_blank');
+  if(w){ w.document.open(); w.document.write(html); w.document.close(); setTimeout(()=>{ try{ w.focus(); w.print(); }catch(e){} },400); }
+  else baixar(new Blob([html],{type:'text/html'}), `Relatorios_${safe(S.prova||'prova')}.html`), toast('O relatório foi baixado. Abra o arquivo e imprima.');
+}
+function baixar(blob,nome){ const l=document.createElement('a'); l.href=URL.createObjectURL(blob); l.download=nome; document.body.appendChild(l); l.click(); l.remove(); setTimeout(()=>URL.revokeObjectURL(l.href),60000); }
+function qLabel(str){ const n=[...new Set(String(str||'').split(/[^0-9]+/).filter(Boolean).map(Number).filter(x=>x>0))].sort((x,y)=>x-y); return n.map(x=>'Q'+pad(x)).join('-'); }
+async function writeFile(dir,name,data){ const fh=await dir.getFileHandle(name,{create:true}); const w=await fh.createWritable(); await w.write(data); await w.close(); }
 
-/* ---------- processar ---------- */
-function qLabel(str){
-  const nums=String(str||'').split(/[^0-9]+/).filter(Boolean).map(n=>parseInt(n,10)).filter(n=>n>0);
-  if(!nums.length) return '';
-  return [...new Set(nums)].sort((x,y)=>x-y).map(n=>'Q'+pad(n)).join('-');
-}
-async function writeFile(dir, name, data){
-  const fh=await dir.getFileHandle(name,{create:true});
-  const w=await fh.createWritable(); await w.write(data); await w.close();
-}
-
-$('#go').onclick=async()=>{
-  $('#log').innerHTML='';
+$('#guardar').onclick=async()=>{
+  const logEl=$('#guardarLog'); logEl.innerHTML='';
+  const L=t=>{ const li=document.createElement('li'); li.textContent=t; logEl.appendChild(li); };
   const semNome=S.alunos.filter(a=>!a.nome.trim());
-  if(semNome.length){ log(`Faltam nomes em ${semNome.length} aluno(s). Preencha antes de processar.`,'warn'); return; }
+  if(semNome.length){ toast('Falta o nome de algum aluno. Complete na etapa Conferir.'); return ir(3); }
   const nomes=S.alunos.map(a=>safe(a.nome).toLowerCase());
-  if(new Set(nomes).size!==nomes.length){ log('Há alunos com o mesmo nome. Diferencie-os (ex.: sobrenome) antes de processar.','warn'); return; }
-  if(!Object.keys(S.key).length){ log('O gabarito está vazio.','warn'); return; }
-  $('#go').disabled=true;
-  const prova=safe(S.prova||'PROVA');
-  const zip = S.dst ? null : new JSZip();
-  const resumoRows=[], detRows=[];
+  if(new Set(nomes).size!==nomes.length){ toast('Há dois alunos com o mesmo nome. Acrescente o sobrenome.'); return ir(3); }
+  const btn=$('#guardar'); btn.disabled=true; const txt=btn.textContent; btn.textContent='Preparando…';
   try{
+    const prova=safe(S.prova||'Prova'), d=new Date(), stamp=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_${pad(d.getHours())}h${pad(d.getMinutes())}`;
+    const zip=S.dst?null:new JSZip(), resumo=[], det=[];
     for(const a of S.alunos){
       const nome=a.nome.trim(), pasta=safe(nome);
       const dir = zip ? zip.folder(pasta) : await S.dst.getDirectoryHandle(pasta,{create:true});
-      const usados=new Set(); const ficheiros=[];
+      const usados=new Set();
       for(let i=0;i<a.imgs.length;i++){
-        const img=a.imgs[i];
-        const ext=(img.name.match(/\.[^.]+$/)||['.jpg'])[0].toLowerCase();
-        let base=`${pasta}_${prova}_${qLabel(img.q) || 'pag'+pad(i+1)}`, nm=base+ext, k=2;
-        while(usados.has(nm.toLowerCase())) nm=`${base}_${k++}${ext}`;
-        usados.add(nm.toLowerCase());
-        if(zip) dir.file(nm, img.file); else await writeFile(dir, nm, img.file);
-        ficheiros.push(nm);
+        const img=a.imgs[i], ext=(img.name.match(/\.[^.]+$/)||['.jpg'])[0].toLowerCase();
+        let base=`${pasta}_${prova}_${qLabel(img.q)||'pagina'+pad(i+1)}`, nm=base+ext, k=2;
+        while(usados.has(nm.toLowerCase())) nm=`${base}_${k++}${ext}`; usados.add(nm.toLowerCase());
+        if(zip) dir.file(nm,img.file); else await writeFile(dir,nm,img.file);
       }
       const sc=score(a);
-      if(sc.pend) log(`⚠ ${a.nome.trim()}: ${sc.pend} questão(ões) aberta(s) sem revisão da professora.`,'warn');
-      resumoRows.push({'Aluno':nome,'Prova':S.prova,'Questões corrigidas':sc.tot,'Acertos':sc.corr,'Parciais':sc.parc,'Erros':sc.err,'Em branco / sem resposta':sc.br,'Abertas por rever':sc.pend,
-        '% Acerto': sc.tot? Math.round(sc.corr/sc.tot*1000)/10 : 0, 'Nota (pontos)':sc.nota, 'Pontos possíveis':sc.max,'Fotos':ficheiros.length,'Pasta':pasta});
-      for(let q=1;q<=S.n;q++){
-        const k=S.key[q], r=a.resp[q];
-        if(isAb(q)){
-          const o=a.ab[q]||{};
-          const res = o.nota==null ? 'Sem nota' : (o.nota>=peso(q) ? 'Certa' : (o.nota>0 ? 'Parcial' : 'Errada'));
-          detRows.push({'Aluno':nome,'Questão':q,'Tipo':'Aberta','Marcada':'','Gabarito':'','Resultado':res,'Valor (pts)':peso(q),'Pontos obtidos':o.nota??0,
-            'Transcrição':o.transcricao||'','Sugestão IA (pts)':o.pontosIA??'','Justificativa IA':o.justificativa||'','Confiança':o.confianca||'','Revista pela professora':o.revisado?'Sim':'Não'});
-          continue;
-        }
-        if(!k && !r) continue;
-        let res = !k ? 'Sem gabarito' : (!r ? 'Sem resposta' : (r==='-' ? 'Em branco/anulada' : (r===k ? 'Certa' : 'Errada')));
-        detRows.push({'Aluno':nome,'Questão':q,'Tipo':'Objetiva','Marcada':r==='-'?'∅':(r||''),'Gabarito':k||'','Resultado':res,'Valor (pts)':k?peso(q):'','Pontos obtidos':res==='Certa'?peso(q):0});
+      resumo.push({'Aluno':nome,'Prova':S.prova,'Nota':sc.nota,'Pontos possíveis':sc.max,'Certas':sc.corr,'Parciais':sc.parc,'Erradas':sc.err,'Em branco':sc.br,'Abertas sem conferir':sc.pend,'Fotos':a.imgs.length});
+      for(const l of linhasAluno(a)){
+        det.push(l.ab
+          ? {'Aluno':nome,'Questão':l.q,'Tipo':'Aberta','Marcou':'','Certa':'','Resultado':l.res,'Vale':r2(peso(l.q)),'Pontos':l.pts,'Transcrição':l.o.transcricao||'','Sugestão do sistema':l.o.pontosIA??'','Comentário do sistema':l.o.justificativa||'','Conferida pela professora':l.o.revisado?'Sim':'Não'}
+          : {'Aluno':nome,'Questão':l.q,'Tipo':'Objetiva','Marcou':l.r==='-'?'em branco':(l.r||''),'Certa':l.k,'Resultado':l.res,'Vale':r2(peso(l.q)),'Pontos':r2(l.pts)});
       }
-      log(`✓ ${nome}: ${sc.corr}/${sc.tot} acertos, ${fmt(sc.nota)} de ${fmt(sc.max)} pts · ${ficheiros.length} foto(s) em /${pasta}`);
     }
     const wb=XLSX.utils.book_new();
-    const ws1=XLSX.utils.json_to_sheet(resumoRows);
-    ws1['!cols']=[{wch:32},{wch:10},{wch:18},{wch:9},{wch:9},{wch:8},{wch:22},{wch:17},{wch:10},{wch:13},{wch:15},{wch:7},{wch:30}];
-    XLSX.utils.book_append_sheet(wb, ws1, 'Notas');
-    const ws2=XLSX.utils.json_to_sheet(detRows);
-    ws2['!cols']=[{wch:32},{wch:9},{wch:10},{wch:9},{wch:9},{wch:12},{wch:11},{wch:14},{wch:60},{wch:16},{wch:50},{wch:11},{wch:22}];
-    ws2['!autofilter']={ref:ws2['!ref']};
-    XLSX.utils.book_append_sheet(wb, ws2, 'Detalhes');
-    const gab=[]; for(let q=1;q<=S.n;q++) gab.push({'Questão':q,'Gabarito': isAb(q)?'Aberta':(S.key[q]||'(sem gabarito)'),'Valor (pts)':S.key[q]?peso(q):'','Critério (abertas)':isAb(q)?(S.crit[q]||''):''});
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(gab), 'Gabarito');
-    const d=new Date(), stamp=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}`;
-    const xname=`Notas_${prova}_${stamp}.xlsx`;
-    const xbuf=XLSX.write(wb,{bookType:'xlsx',type:'array'});
-    const rname=`Relatorios_${prova}_${stamp}.html`, rhtml=relatorioHTML($('#relTipo').value);
+    const w1=XLSX.utils.json_to_sheet(resumo); w1['!cols']=[{wch:30},{wch:14},{wch:8},{wch:15},{wch:8},{wch:9},{wch:9},{wch:10},{wch:20},{wch:7}];
+    XLSX.utils.book_append_sheet(wb,w1,'Notas');
+    const w2=XLSX.utils.json_to_sheet(det); w2['!cols']=[{wch:30},{wch:8},{wch:9},{wch:10},{wch:7},{wch:11},{wch:7},{wch:8},{wch:60},{wch:18},{wch:50},{wch:24}]; w2['!autofilter']={ref:w2['!ref']};
+    XLSX.utils.book_append_sheet(wb,w2,'Detalhes');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(chaves().map(q=>({'Questão':q,'Resposta certa':isAb(q)?'Aberta':S.key[q],'Vale':r2(peso(q)),'O que a resposta precisa ter':isAb(q)?(S.crit[q]||''):''}))),'Gabarito');
+    const xname=`Notas_${prova}_${stamp}.xlsx`, xbuf=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+    const rname=`Relatorios_${prova}_${stamp}.html`, rhtml=relatorioHTML(S.relTipo);
     if(zip){
-      zip.file(xname, xbuf); zip.file(rname, rhtml);
-      log('A criar o ZIP…');
-      const blob=await zip.generateAsync({type:'blob'});
-      const zname=`Correcao_${prova}_${stamp}.zip`;
-      const link=document.createElement('a'); link.href=URL.createObjectURL(blob); link.download=zname;
-      document.body.appendChild(link); link.click(); link.remove();
-      setTimeout(()=>URL.revokeObjectURL(link.href), 60000);
-      log(`✓ ZIP descarregado: ${zname} (inclui o Excel e os relatórios)`);
+      zip.file(xname,xbuf); zip.file(rname,rhtml);
+      const blob=await zip.generateAsync({type:'blob'}), zname=`Correcao_${prova}_${stamp}.zip`;
+      baixar(blob,zname);
+      L(`✓ Arquivo ${zname} baixado`); L(`✓ ${S.alunos.length} pastas de alunos com as fotos`); L('✓ Planilha de notas e relatórios dentro do ZIP');
     } else {
-      await writeFile(S.dst, xname, xbuf);
-      await writeFile(S.dst, rname, rhtml);
-      log(`✓ Excel criado: ${xname}`);
-      log(`✓ Relatórios criados: ${rname} (abra e imprima)`);
+      await writeFile(S.dst,xname,xbuf); await writeFile(S.dst,rname,rhtml);
+      L(`✓ ${S.alunos.length} pastas de alunos salvas em "${S.dst.name}"`); L(`✓ Planilha ${xname}`); L(`✓ Relatórios ${rname}`);
     }
-    log('Concluído.');
-  }catch(e){
-    log('Erro: '+e.message,'warn');
-  }finally{ $('#go').disabled=false; }
+    toast('Pronto! Tudo guardado.');
+  }catch(e){ L('Não deu certo: '+e.message); toast('Não foi possível guardar. Tente de novo.'); }
+  finally{ btn.disabled=false; btn.textContent=txt; }
 };
 
-loadCfg(); renderKey(); updateGo();
-if(!HAS_FS) document.querySelectorAll('.fsonly').forEach(e=>e.style.display='none');
+window.addEventListener('beforeunload',e=>{ if((S.alunos.length||S.lote.length) && !window.indexedDB){ e.preventDefault(); e.returnValue=''; } });
 
+/* ================= Início ================= */
+carregar();
+if(!HAS_FS) document.querySelectorAll('.fsonly').forEach(e=>e.style.display='none');
+if(!/teste/.test(location.hash)) $('#ajExemplo').style.display='none';
+(async()=>{
+  const voltou=await restaurarSessao();
+  if(voltou){ ir(S.alunos.length ? 3 : 2); toast('Continuando a correção de onde você parou.'); }
+  else ir(chaves().length ? 2 : 1);
+  let semCod=false; try{ semCod=localStorage.getItem('corretor_semcodigo')==='1'; }catch(e){}
+  if(!S.codigo && !semCod) setTimeout(()=>abrir('#shCodigo'),300);
+})();
 </script>
 </body>
 </html>

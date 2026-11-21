@@ -1,43 +1,43 @@
 # Corretor de Provas
 
-Ferramenta web para professores, para provas de múltipla escolha e questões abertas: escolhe uma pasta de origem com as fotos das provas (uma subpasta por aluno) e uma pasta de destino. A IA lê as alternativas marcadas, o professor revê, e a ferramenta copia as fotos renomeadas e gera um Excel com as notas e os detalhes de cada aluno.
+Ferramenta web para professores corrigirem provas pelo celular: múltipla escolha e questões abertas, com leitura por IA, separação automática por aluno, relatórios para imprimir e planilha de notas.
 
-Funciona no Chrome ou Edge de computador.
+Funciona no navegador do celular (Android ou iPhone) e do computador. Para salvar direto numa pasta do computador, use Chrome ou Edge.
 
-## Fotos em sequência (telemóvel)
+## Como a professora usa (4 etapas)
 
-Toque em **Tirar foto** para cada página, prova a prova: primeira página do João, páginas seguintes, primeira página do Guilherme, e assim por diante. Em **Ler e separar por aluno**, a IA reconhece a primeira página de cada aluno, lê o nome e as respostas e separa as fotos. Se errar, use **Novo aluno daqui** numa foto ou **Juntar ao aluno anterior** num aluno.
+1. **Gabarito:** nome da prova, número de questões e a resposta certa de cada uma (toque na letra ou em "Aberta"). Pontuação com o mesmo valor para todas, ou valor por questão. Fica salvo no navegador.
+2. **Fotos:** "Tirar foto" para cada página, em sequência, aluno por aluno, começando pela página com o nome. Também dá para escolher da galeria ou de uma pasta do computador.
+3. **Conferir:** o sistema lê as respostas, separa os alunos e marca em laranja o que precisa de atenção. Se errar a separação, use os três pontinhos da foto ("Esta foto é de outro aluno") ou "Juntar com o aluno de cima". As correções feitas à mão são mantidas.
+4. **Entregar:** imprimir os relatórios (folha completa ou fichas para grampear, 4 por folha) e baixar um ZIP com uma pasta por aluno, a planilha de notas e os relatórios.
 
-Sem pasta de destino (sempre no telemóvel), o resultado é descarregado num ZIP com uma pasta por aluno, o Excel e os relatórios.
-
-## Relatórios para imprimir
-
-Em **Imprimir relatórios**, escolha o modelo: **Completo** (uma folha por aluno, com todas as questões, transcrição das abertas, observações e assinaturas) ou **Resumo para anexar** (4 fichas por folha A4, com a nota e as questões a rever, para recortar e agrafar na prova). Notas de questões abertas ainda não revistas aparecem como "nota provisória".
+A correção fica guardada no aparelho: se a página recarregar, continua de onde parou. "Começar uma correção nova", nos Ajustes (⚙️), apaga as fotos e as notas, mas mantém o gabarito.
 
 ## Questões abertas
 
-No gabarito, escolha "Aberta" na questão e escreva a resposta esperada e os critérios com pontos. A IA transcreve a resposta do aluno tal como foi escrita (palavras duvidosas ficam destacadas), sugere a nota com uma justificação e um nível de confiança. A professora confirma ou ajusta cada nota. O Excel guarda a transcrição, a sugestão da IA, a nota final e se foi revista.
+A IA transcreve a resposta tal como foi escrita (palavras duvidosas em amarelo), sugere a nota com uma justificativa e indica a confiança da leitura. A professora confirma ou ajusta. Notas não conferidas saem nos relatórios como "nota provisória".
 
 Para letra difícil, pode usar um modelo mais forte definindo `MODELO` na Vercel (por exemplo `claude-opus-5-5`).
 
 ## Estrutura
 
-- `index.html`: a ferramenta (gabarito, pontos por questão, pastas, revisão, Excel).
+- `index.html`: a ferramenta inteira.
 - `api/ler.js`: função da Vercel que recebe uma foto e chama a API da Anthropic. A chave nunca chega ao navegador.
+- `tests/ui_test.py`: teste do fluxo completo com Playwright e leituras simuladas, em 360, 390, 768 e 1360 px. Uso: `SHOTS=/tmp/shots FOTOS=pasta_com_fotos python3 tests/ui_test.py` (`UX=1` gera capturas em todas as larguras). Tem de terminar com 0 falhas.
 
 ## Deploy na Vercel
 
 1. Em vercel.com, **Add New → Project** e importe este repositório.
 2. Em **Environment Variables**, crie:
    - `ANTHROPIC_API_KEY` (ou `CLAUDE_API_KEY`): a chave criada na Claude Console.
-   - `CODIGO_ACESSO`: um código à sua escolha, que vai dar aos professores.
+   - `CODIGO_ACESSO`: o código que a professora digita na primeira vez.
    - `MODELO` (opcional): por omissão `claude-sonnet-5-5`.
-3. Clique em **Deploy**. Partilhe o link e o código de acesso com o professor.
+3. **Deploy**. Partilhe o link e o código.
 
-Para mudar a chave ou o código, altere a variável em **Settings → Environment Variables** e faça **Redeploy**.
+Para testar com o gabarito de exemplo (prova M0504), abra o link com `#teste` no fim: aparece "Carregar gabarito de exemplo" nos Ajustes.
 
 ## Segurança
 
 - Use uma chave dedicada e um limite de gasto na Claude Console.
-- Se o código de acesso for partilhado com quem não deve, troque-o na Vercel.
-- As fotos são enviadas para a API da Anthropic para leitura. Confirme as regras da escola sobre dados de alunos.
+- Se o código de acesso se espalhar, troque-o na Vercel e faça Redeploy.
+- As fotos são enviadas para a API da Anthropic para leitura. Confirme as regras da escola sobre dados de alunos (LGPD).
