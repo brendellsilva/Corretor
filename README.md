@@ -13,7 +13,7 @@ Funciona no Chrome ou Edge de computador.
 
 1. Em vercel.com, **Add New → Project** e importe este repositório.
 2. Em **Environment Variables**, crie:
-   - `ANTHROPIC_API_KEY`: a chave criada na Claude Console.
+   - `ANTHROPIC_API_KEY` (ou `CLAUDE_API_KEY`): a chave criada na Claude Console.
    - `CODIGO_ACESSO`: um código à sua escolha, que vai dar aos professores.
    - `MODELO` (opcional): por omissão `claude-sonnet-5-5`.
 3. Clique em **Deploy**. Partilhe o link e o código de acesso com o professor.

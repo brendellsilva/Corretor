@@ -1,5 +1,5 @@
 // Função da Vercel: recebe UMA foto de prova e devolve as questões e as alternativas marcadas.
-// Variáveis de ambiente: ANTHROPIC_API_KEY, CODIGO_ACESSO e, opcional, MODELO.
+// Variáveis de ambiente: ANTHROPIC_API_KEY (ou CLAUDE_API_KEY), CODIGO_ACESSO e, opcional, MODELO.
 
 const PROMPT = `Esta imagem é UMA página da prova de múltipla escolha de um aluno.
 Identifique os números das questões que aparecem nesta página e, para cada questão, a alternativa que o aluno marcou (letra circulada, riscada ou com X sobre a letra).
@@ -23,7 +23,7 @@ export default async function handler(req, res) {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'x-api-key': process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY,
         'anthropic-version': '2023-06-01',
         'content-type': 'application/json',
       },
